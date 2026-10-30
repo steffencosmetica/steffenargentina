@@ -33,3 +33,29 @@ npm run start      # http://localhost:3000
 - `recursos/sin-uso/` — imágenes del sitio original que no se usan en ninguna página (no se publican).
 
 Las URLs viejas (`/reparadores.html`, `/contacto.html`, etc.) redirigen con 301 a las nuevas.
+
+## Catálogo (Supabase)
+
+El esquema de la tienda vive en `supabase/migrations/` (tablas, restricciones, RLS, bucket de imágenes)
+y se prueba con `supabase/tests/database/`. El código que lo consulta está en `src/lib/supabase/`
+(clientes) y `src/lib/catalog/` (consultas públicas, operaciones de administración y validación).
+
+Local (requiere Docker; usa los puertos 553xx para no chocar con otros proyectos Supabase):
+
+```bash
+npm run db:start   # levanta Supabase y aplica las migraciones
+npm run db:test    # pruebas de restricciones y políticas RLS
+npm run db:types   # regenera src/lib/supabase/database.types.ts
+npm test           # pruebas unitarias (importes y validaciones)
+```
+
+Para conectar la app, copiá `.env.example` como `.env.local` y completá la URL y la clave publicable
+(`npx supabase status` las muestra para el entorno local).
+
+Administradores: no hay registro público. Se invita al usuario desde Supabase (Authentication → Users)
+y se lo habilita en el SQL Editor:
+
+```sql
+insert into public.admin_users (user_id, note)
+select id, 'Administrador del catálogo' from auth.users where email = 'persona@steffenargentina.com.ar';
+```

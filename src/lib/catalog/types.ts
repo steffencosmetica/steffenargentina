@@ -20,6 +20,9 @@ export type ProductImage = {
   sortOrder: number;
 };
 
+/** Disponibilidad pública que calcula la base (products.availability). El stock exacto no es público. */
+export type Availability = 'disponible' | 'ultimas' | 'sin-stock';
+
 export type Product = {
   id: string;
   sku: string;
@@ -32,7 +35,7 @@ export type Product = {
   presentation: string | null;
   category: { id: string; name: string; slug: string };
   priceCentavos: Centavos;
-  stock: number;
+  availability: Availability;
   weightGrams: number | null;
   packageMm: { length: number | null; width: number | null; height: number | null };
   isFeatured: boolean;

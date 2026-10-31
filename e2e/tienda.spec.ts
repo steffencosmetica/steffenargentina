@@ -252,6 +252,37 @@ test.describe.serial('tienda pública', () => {
     await admin.close();
   });
 
+  test('el stock editado en /admin cambia la disponibilidad pública sin rebuild', async ({ page, browser }) => {
+    const admin = await browser.newContext({ storageState: ADMIN_STATE });
+    const adminPage = await admin.newPage();
+    const row = adminPage.getByTestId('product-row').filter({ hasText: 'TND-NEUTRO' });
+    const setStock = async (value: string) => {
+      await adminPage.goto('/admin/productos?q=TND-NEUTRO');
+      await row.getByLabel(/^Stock de /).fill(value);
+      await row.getByRole('button', { name: /^Guardar stock/ }).click();
+      await expect(row.getByRole('status')).toHaveText('✓');
+    };
+    const badge = page.locator('.store-product-info .store-availability');
+
+    await setStock('2');
+    await page.goto('/tienda/shampoo-neutro-1000cc');
+    await expect(badge).toHaveText('Últimas unidades');
+
+    await setStock('0');
+    await page.goto('/tienda/shampoo-neutro-1000cc');
+    await expect(badge).toHaveText('Sin stock');
+    await page.goto('/tienda?mostrar=48');
+    // sin stock pasa al final aunque sea destacado (junto con el otro producto sin stock)
+    expect((await cardNames(page)).slice(-2)).toEqual(['Shampoo Neutro 1000cc', 'Acondicionador Ácido']);
+    // el panel sigue mostrando la cantidad exacta
+    await expect(row.getByLabel(/^Stock de /)).toHaveValue('0');
+
+    await setStock('20');
+    await page.goto('/tienda/shampoo-neutro-1000cc');
+    await expect(badge).toHaveText('Disponible');
+    await admin.close();
+  });
+
   test('sin destacados la sección del inicio no se muestra', async ({ page, browser }) => {
     localSql(`update public.products set is_featured = false`);
     await invalidateCatalog(browser);

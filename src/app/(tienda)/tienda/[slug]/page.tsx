@@ -87,7 +87,7 @@ export default async function ProductoPage({ params }: Props) {
           <span className="store-price" data-testid="product-price">
             {formatArs(product.priceCentavos)}
           </span>
-          <AvailabilityBadge stock={product.stock} />
+          <AvailabilityBadge level={product.availability} />
           {product.shortDescription && <p className="store-product-short">{product.shortDescription}</p>}
           {/* espacio de la acción de compra: hoy, la consulta por WhatsApp */}
           <div className="store-product-actions">

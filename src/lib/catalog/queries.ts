@@ -5,18 +5,20 @@ import { createPublicClient } from '@/lib/supabase/public';
 import { CATALOGO_BUCKET } from '@/lib/supabase/env';
 import { parseCentavos } from '@/lib/money';
 import type { Category, Product, ProductImage } from './types';
-import { sortProducts } from './store';
+import { isAvailability, sortProducts } from './store';
 
 // Consultas públicas del catálogo. Usan el cliente anónimo, así que RLS solo deja ver
 // categorías activas y productos activos de categorías activas. Además se filtra explícitamente,
 // por si alguna vez se las llama con un cliente con sesión de administrador.
+// El stock exacto no es público: anon solo puede leer la columna availability (permisos por columna,
+// ver supabase/migrations/*_productos_stock_privado.sql). Pedir stock acá haría fallar la consulta.
 
 type Client = SupabaseClient<Database>;
 
 // price_ars::text: el importe llega como texto exacto y se pasa a centavos sin usar float
 const PRODUCT_SELECT = `
   id, sku, name, slug, short_description, description, usage_instructions, benefits, presentation,
-  price_ars::text, stock, weight_grams, package_length_mm, package_width_mm, package_height_mm,
+  price_ars::text, availability, weight_grams, package_length_mm, package_width_mm, package_height_mm,
   is_featured, sort_order, updated_at,
   category:categories!inner ( id, name, slug, is_active ),
   images:product_images ( id, storage_path, sort_order, is_primary, alt_text )
@@ -37,7 +39,7 @@ type ProductRow = {
   benefits: string | null;
   presentation: string | null;
   price_ars: string;
-  stock: number;
+  availability: string;
   weight_grams: number | null;
   package_length_mm: number | null;
   package_width_mm: number | null;
@@ -73,7 +75,8 @@ function toProduct(client: Client, row: ProductRow): Product {
     presentation: row.presentation,
     category: { id: row.category.id, name: row.category.name, slug: row.category.slug },
     priceCentavos: parseCentavos(row.price_ars),
-    stock: row.stock,
+    // un valor desconocido se trata como sin stock: nunca se ofrece algo que podría no estar disponible
+    availability: isAvailability(row.availability) ? row.availability : 'sin-stock',
     weightGrams: row.weight_grams,
     packageMm: { length: row.package_length_mm, width: row.package_width_mm, height: row.package_height_mm },
     isFeatured: row.is_featured,

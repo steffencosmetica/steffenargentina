@@ -1,8 +1,7 @@
-import { AVAILABILITY_LABEL, availability } from '@/lib/catalog/store';
+import { AVAILABILITY_LABEL, type Availability } from '@/lib/catalog/store';
 
-/** Disponible / Últimas unidades / Sin stock. Nunca muestra la cantidad exacta. */
-export default function AvailabilityBadge({ stock }: { stock: number }) {
-  const level = availability(stock);
+/** Disponible / Últimas unidades / Sin stock. La tienda no tiene acceso a la cantidad exacta. */
+export default function AvailabilityBadge({ level }: { level: Availability }) {
   return (
     <span className="store-availability" data-level={level}>
       {AVAILABILITY_LABEL[level]}

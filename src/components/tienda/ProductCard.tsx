@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { formatArs } from '@/lib/money';
-import { availability } from '@/lib/catalog/store';
 import type { Product } from '@/lib/catalog/types';
 import AvailabilityBadge from './AvailabilityBadge';
 import NoImage from './NoImage';
@@ -25,7 +24,7 @@ export default function ProductCard({
   sizes?: string;
 }) {
   const image = product.images[0];
-  const level = availability(product.stock);
+  const level = product.availability;
   return (
     <Link href={`/tienda/${product.slug}`} className="store-card" data-level={level} data-testid="store-card">
       <span className="store-card-media">
@@ -46,7 +45,7 @@ export default function ProductCard({
         <span className="store-card-category">{product.category.name}</span>
         <span className="store-card-name">{product.name}</span>
         <span className="store-price">{formatArs(product.priceCentavos)}</span>
-        <AvailabilityBadge stock={product.stock} />
+        <AvailabilityBadge level={product.availability} />
       </span>
     </Link>
   );

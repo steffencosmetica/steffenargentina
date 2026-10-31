@@ -55,14 +55,14 @@ isOneToOne: false
                   ]
                 },"products": {
                   Row: {
-                    "benefits": string | null,"category_id": string,"created_at": string,"description": string | null,"id": string,"is_active": boolean,"is_featured": boolean,"name": string,"package_height_mm": number | null,"package_length_mm": number | null,"package_width_mm": number | null,"presentation": string | null,"price_ars": number,"short_description": string | null,"sku": string,"slug": string,"sort_order": number,"stock": number,"updated_at": string,"usage_instructions": string | null,"weight_grams": number | null
+                    "availability": string | null,"benefits": string | null,"category_id": string,"created_at": string,"description": string | null,"id": string,"is_active": boolean,"is_featured": boolean,"name": string,"package_height_mm": number | null,"package_length_mm": number | null,"package_width_mm": number | null,"presentation": string | null,"price_ars": number,"short_description": string | null,"sku": string,"slug": string,"sort_order": number,"stock": number,"updated_at": string,"usage_instructions": string | null,"weight_grams": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "benefits"?: string | null,"category_id": string,"created_at"?: string,"description"?: string | null,"id"?: string,"is_active"?: boolean,"is_featured"?: boolean,"name": string,"package_height_mm"?: number | null,"package_length_mm"?: number | null,"package_width_mm"?: number | null,"presentation"?: string | null,"price_ars": number,"short_description"?: string | null,"sku": string,"slug": string,"sort_order"?: number,"stock"?: number,"updated_at"?: string,"usage_instructions"?: string | null,"weight_grams"?: number | null
+                    "availability"?: never,"benefits"?: string | null,"category_id": string,"created_at"?: string,"description"?: string | null,"id"?: string,"is_active"?: boolean,"is_featured"?: boolean,"name": string,"package_height_mm"?: number | null,"package_length_mm"?: number | null,"package_width_mm"?: number | null,"presentation"?: string | null,"price_ars": number,"short_description"?: string | null,"sku": string,"slug": string,"sort_order"?: number,"stock"?: number,"updated_at"?: string,"usage_instructions"?: string | null,"weight_grams"?: number | null
                   }
                   Update: {
-                    "benefits"?: string | null,"category_id"?: string,"created_at"?: string,"description"?: string | null,"id"?: string,"is_active"?: boolean,"is_featured"?: boolean,"name"?: string,"package_height_mm"?: number | null,"package_length_mm"?: number | null,"package_width_mm"?: number | null,"presentation"?: string | null,"price_ars"?: number,"short_description"?: string | null,"sku"?: string,"slug"?: string,"sort_order"?: number,"stock"?: number,"updated_at"?: string,"usage_instructions"?: string | null,"weight_grams"?: number | null
+                    "availability"?: never,"benefits"?: string | null,"category_id"?: string,"created_at"?: string,"description"?: string | null,"id"?: string,"is_active"?: boolean,"is_featured"?: boolean,"name"?: string,"package_height_mm"?: number | null,"package_length_mm"?: number | null,"package_width_mm"?: number | null,"presentation"?: string | null,"price_ars"?: number,"short_description"?: string | null,"sku"?: string,"slug"?: string,"sort_order"?: number,"stock"?: number,"updated_at"?: string,"usage_instructions"?: string | null,"weight_grams"?: number | null
                   }
                   Relationships: [
                     {
@@ -79,7 +79,12 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "is_admin":
+            "admin_product_stock":
+{ Args: { "p_ids"?: (string)[] }; Returns: {
+              "id": string,"stock": number
+            }[]
+                           },
+"is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
 "set_primary_product_image":

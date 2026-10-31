@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   PAGE_SIZE,
-  availability,
   filterProducts,
+  isAvailability,
   normalizeText,
   parseStoreQuery,
   relatedProducts,
@@ -24,7 +24,7 @@ function product(p: Partial<Product> & { id: string; name: string }): Product {
     presentation: null,
     category: { id: 'c1', name: 'Shampoos', slug: 'shampoos' },
     priceCentavos: 100_00,
-    stock: 10,
+    availability: 'disponible',
     weightGrams: null,
     packageMm: { length: null, width: null, height: null },
     isFeatured: false,
@@ -37,28 +37,24 @@ function product(p: Partial<Product> & { id: string; name: string }): Product {
 
 const mascaras = { id: 'c2', name: 'Máscaras', slug: 'mascaras' };
 const catalogo: Product[] = [
-  product({ id: 'a', name: 'Shampoo Neutro 1000cc', sku: 'SHNEU1000', priceCentavos: 12_550_00, stock: 20 }),
-  product({ id: 'b', name: 'Acondicionador Ácido', priceCentavos: 9_000_00, stock: 0, isFeatured: true }),
-  product({ id: 'c', name: 'Máscara Argán', priceCentavos: 15_000_00, stock: 2, category: mascaras, isFeatured: true }),
-  product({ id: 'd', name: 'Bálsamo Lino', priceCentavos: 5_000_00, stock: 4, sortOrder: -1 }),
-  product({ id: 'e', name: 'Máscara Coco', priceCentavos: 1_000_00, stock: 0, category: mascaras }),
+  product({ id: 'a', name: 'Shampoo Neutro 1000cc', sku: 'SHNEU1000', priceCentavos: 12_550_00, availability: 'disponible' }),
+  product({ id: 'b', name: 'Acondicionador Ácido', priceCentavos: 9_000_00, availability: 'sin-stock', isFeatured: true }),
+  product({ id: 'c', name: 'Máscara Argán', priceCentavos: 15_000_00, availability: 'ultimas', category: mascaras, isFeatured: true }),
+  product({ id: 'd', name: 'Bálsamo Lino', priceCentavos: 5_000_00, availability: 'disponible', sortOrder: -1 }),
+  product({ id: 'e', name: 'Máscara Coco', priceCentavos: 1_000_00, availability: 'sin-stock', category: mascaras }),
 ];
 const names = (list: Product[]) => list.map((p) => p.name);
 
-test('disponibilidad en tres niveles sin exponer la cantidad', () => {
-  assert.equal(availability(100), 'disponible');
-  assert.equal(availability(4), 'disponible');
-  assert.equal(availability(3), 'ultimas');
-  assert.equal(availability(1), 'ultimas');
-  assert.equal(availability(0), 'sin-stock');
-  assert.equal(availability(-1), 'sin-stock');
+test('solo se aceptan los tres niveles de disponibilidad que calcula la base', () => {
+  for (const v of ['disponible', 'ultimas', 'sin-stock']) assert.ok(isAvailability(v), v);
+  for (const v of ['', 'DISPONIBLE', 3, null, undefined, 'agotado']) assert.equal(isAvailability(v), false, String(v));
 });
 
 test('los productos sin stock quedan al final con cualquier orden', () => {
   for (const orden of ['destacados', 'nombre', 'precio-asc', 'precio-desc'] as const) {
     const sorted = sortProducts(catalogo, orden);
-    const firstOut = sorted.findIndex((p) => p.stock === 0);
-    assert.ok(sorted.slice(firstOut).every((p) => p.stock === 0), `orden ${orden}`);
+    const firstOut = sorted.findIndex((p) => p.availability === 'sin-stock');
+    assert.ok(sorted.slice(firstOut).every((p) => p.availability === 'sin-stock'), `orden ${orden}`);
     assert.equal(firstOut, 3, `orden ${orden}`);
   }
 });

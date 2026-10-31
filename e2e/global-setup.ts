@@ -46,13 +46,26 @@ export default async function globalSetup() {
   localSql(`
 do $$
 begin
-  delete from public.product_images;
-  delete from public.products;
-  delete from public.categories;
   delete from auth.users where email like '%@steffen.test';
   ${userSql(IDS.admin, ADMIN.email, ADMIN.password)}
   ${userSql(IDS.cliente, CLIENTE.email, CLIENTE.password)}
   insert into public.admin_users (user_id, note) values ('${IDS.admin}', 'e2e');
+end
+$$`);
+  seedBaseCatalog();
+}
+
+/**
+ * Catálogo de partida de los specs del panel (categorías, productos, seguridad).
+ * Los specs que cargan su propio catálogo (tienda-data.ts) lo restauran al terminar.
+ */
+export function seedBaseCatalog() {
+  localSql(`
+do $$
+begin
+  delete from public.product_images;
+  delete from public.products;
+  delete from public.categories;
   insert into public.categories (id, name, slug, sort_order, is_active) values
     ('${IDS.shampoos}', 'Shampoos', 'shampoos', 10, true),
     ('${IDS.mascaras}', 'Máscaras', 'mascaras', 20, true);

@@ -152,11 +152,11 @@ export async function moveCategory(id: string, direction: 'up' | 'down') {
 export async function deleteCategory(id: string) {
   assertUuid(id);
   const { supabase } = await requireAdmin();
-  const { count, error: countError } = await supabase
-    .from('products')
-    .select('id', { count: 'exact', head: true })
-    .eq('category_id', id);
+  // se traen los ids y se cuentan: count=exact usa COUNT(*), que exige SELECT sobre toda la tabla
+  // products (ya no se otorga: el stock exacto es privado)
+  const { data: products, error: countError } = await supabase.from('products').select('id').eq('category_id', id);
   if (countError) throw countError;
+  const count = products.length;
   if (count) {
     throw new AdminActionError(
       `La categoría tiene ${count} producto${count === 1 ? '' : 's'} asociado${count === 1 ? '' : 's'}: movelos o desactivala en lugar de borrarla.`,

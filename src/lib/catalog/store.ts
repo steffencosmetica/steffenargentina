@@ -2,13 +2,13 @@
 // orden, paginación y enlaces. Se usa en el servidor y se prueba con node --test.
 
 import { WHATSAPP_NUMERO } from '../site.ts';
-import type { Product } from './types.ts';
+import type { Availability, Product } from './types.ts';
+
+export type { Availability };
 
 // ---------------------------------------------------------------------------
 // Disponibilidad (nunca se muestra la cantidad exacta)
 // ---------------------------------------------------------------------------
-
-export type Availability = 'disponible' | 'ultimas' | 'sin-stock';
 
 export const AVAILABILITY_LABEL: Record<Availability, string> = {
   disponible: 'Disponible',
@@ -16,10 +16,9 @@ export const AVAILABILITY_LABEL: Record<Availability, string> = {
   'sin-stock': 'Sin stock',
 };
 
-export function availability(stock: number): Availability {
-  if (stock > 3) return 'disponible';
-  if (stock > 0) return 'ultimas';
-  return 'sin-stock';
+// La calcula la base (columna generada products.availability: más de 3, de 1 a 3, 0); acá solo se valida.
+export function isAvailability(value: unknown): value is Availability {
+  return value === 'disponible' || value === 'ultimas' || value === 'sin-stock';
 }
 
 // ---------------------------------------------------------------------------
@@ -103,7 +102,7 @@ function compareBy(sort: StoreSort): (a: Product, b: Product) => number {
  */
 export function sortProducts(products: Product[], sort: StoreSort = 'destacados'): Product[] {
   const compare = compareBy(sort);
-  return [...products].sort((a, b) => Number(a.stock <= 0) - Number(b.stock <= 0) || compare(a, b));
+  return [...products].sort((a, b) => Number(a.availability === 'sin-stock') - Number(b.availability === 'sin-stock') || compare(a, b));
 }
 
 /** Busca por nombre o SKU (sin distinguir tildes ni mayúsculas), filtra por categoría y ordena. */

@@ -1,5 +1,4 @@
 import { centavosToDecimal } from '@/lib/money';
-import { availability } from '@/lib/catalog/store';
 import type { Product } from '@/lib/catalog/types';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 
@@ -29,7 +28,7 @@ export function productJsonLd(product: Product) {
         url,
         priceCurrency: 'ARS',
         price: centavosToDecimal(product.priceCentavos),
-        availability: SCHEMA_AVAILABILITY[availability(product.stock)],
+        availability: SCHEMA_AVAILABILITY[product.availability],
         itemCondition: 'https://schema.org/NewCondition',
         seller: { '@type': 'Organization', name: SITE_NAME },
       },

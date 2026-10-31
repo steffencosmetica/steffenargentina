@@ -12,6 +12,16 @@ function publicUrl(supabase: Supabase, path: string) {
   return supabase.storage.from(CATALOGO_BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
+// El stock exacto no se puede leer con SELECT (solo la columna availability, ver
+// supabase/migrations/*_productos_stock_privado.sql): el panel lo pide a admin_product_stock(),
+// que verifica is_admin() en la base.
+async function stockByProduct(supabase: Supabase, ids: string[]) {
+  if (!ids.length) return new Map<string, number>();
+  const { data, error } = await supabase.rpc('admin_product_stock', { p_ids: ids });
+  if (error) throw error;
+  return new Map(data.map((row) => [row.id, row.stock]));
+}
+
 export type AdminProductRow = {
   id: string;
   sku: string;
@@ -35,7 +45,7 @@ export async function listAdminProducts(filters: AdminProductFilters = {}): Prom
   let query = supabase
     .from('products')
     .select(
-      'id, sku, name, price_ars::text, stock, is_active, is_featured, sort_order, category:categories ( id, name, is_active ), images:product_images ( storage_path, is_primary, sort_order )',
+      'id, sku, name, price_ars::text, is_active, is_featured, sort_order, category:categories ( id, name, is_active ), images:product_images ( storage_path, is_primary, sort_order )',
     );
   const q = filters.q ? sanitizeSearch(filters.q) : '';
   if (q) query = query.or(`name.ilike.*${q}*,sku.ilike.*${q}*`);
@@ -53,7 +63,6 @@ export async function listAdminProducts(filters: AdminProductFilters = {}): Prom
         sku: string;
         name: string;
         price_ars: string;
-        stock: number;
         is_active: boolean;
         is_featured: boolean;
         category: { id: string; name: string; is_active: boolean } | null;
@@ -62,6 +71,7 @@ export async function listAdminProducts(filters: AdminProductFilters = {}): Prom
       { merge: false }
     >();
   if (error) throw error;
+  const stock = await stockByProduct(supabase, data.map((row) => row.id));
 
   return data.map((row) => {
     const primary = [...row.images].sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order)[0];
@@ -70,7 +80,7 @@ export async function listAdminProducts(filters: AdminProductFilters = {}): Prom
       sku: row.sku,
       name: row.name,
       priceCentavos: parseCentavos(row.price_ars),
-      stock: row.stock,
+      stock: stock.get(row.id) ?? 0,
       isActive: row.is_active,
       isFeatured: row.is_featured,
       category: row.category ? { id: row.category.id, name: row.category.name, isActive: row.category.is_active } : null,
@@ -109,7 +119,9 @@ export async function getAdminProduct(id: string): Promise<AdminProduct | null> 
   const { supabase } = await requireAdmin();
   const { data, error } = await supabase
     .from('products')
-    .select('*, price_ars::text, images:product_images ( id, storage_path, alt_text, is_primary, sort_order, created_at )')
+    .select(
+      'id, sku, name, slug, short_description, description, usage_instructions, benefits, presentation, category_id, price_ars::text, weight_grams, package_length_mm, package_width_mm, package_height_mm, is_featured, is_active, sort_order, images:product_images ( id, storage_path, alt_text, is_primary, sort_order, created_at )',
+    )
     .eq('id', id)
     .maybeSingle()
     .overrideTypes<
@@ -125,7 +137,6 @@ export async function getAdminProduct(id: string): Promise<AdminProduct | null> 
         presentation: string | null;
         category_id: string;
         price_ars: string;
-        stock: number;
         weight_grams: number | null;
         package_length_mm: number | null;
         package_width_mm: number | null;
@@ -139,6 +150,7 @@ export async function getAdminProduct(id: string): Promise<AdminProduct | null> 
     >();
   if (error) throw error;
   if (!data) return null;
+  const stock = await stockByProduct(supabase, [data.id]);
 
   return {
     id: data.id,
@@ -152,7 +164,7 @@ export async function getAdminProduct(id: string): Promise<AdminProduct | null> 
     presentation: data.presentation,
     categoryId: data.category_id,
     priceCentavos: parseCentavos(data.price_ars),
-    stock: data.stock,
+    stock: stock.get(data.id) ?? 0,
     weightGrams: data.weight_grams,
     packageLengthMm: data.package_length_mm,
     packageWidthMm: data.package_width_mm,
@@ -186,11 +198,13 @@ export async function listAdminCategories(): Promise<AdminCategory[]> {
   const { supabase } = await requireAdmin();
   const { data, error } = await supabase
     .from('categories')
-    .select('id, name, slug, description, is_active, sort_order, products(count)')
+    // products(id) y no products(count): el agregado COUNT(*) exige SELECT sobre toda la tabla products,
+    // que ya no se otorga (el stock exacto es privado, ver *_productos_stock_privado.sql)
+    .select('id, name, slug, description, is_active, sort_order, products(id)')
     .order('sort_order')
     .order('name')
     .overrideTypes<
-      { id: string; name: string; slug: string; description: string | null; is_active: boolean; sort_order: number; products: { count: number }[] }[],
+      { id: string; name: string; slug: string; description: string | null; is_active: boolean; sort_order: number; products: { id: string }[] }[],
       { merge: false }
     >();
   if (error) throw error;
@@ -201,7 +215,7 @@ export async function listAdminCategories(): Promise<AdminCategory[]> {
     description: c.description,
     isActive: c.is_active,
     sortOrder: c.sort_order,
-    productCount: c.products[0]?.count ?? 0,
+    productCount: c.products.length,
   }));
 }
 

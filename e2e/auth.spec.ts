@@ -96,6 +96,22 @@ test.describe('autenticación', () => {
     await expect(page.getByText('Tu sesión expiró')).toBeVisible();
   });
 
+  test('regresión: el login nunca redirige a destinos inválidos', async ({ page }) => {
+    // caso real: la URL del login copiada con un punto final
+    await page.goto('/admin/login.');
+    await expect(page).toHaveURL(/\/admin\/login$/);
+
+    // destinos inválidos pasados a mano en ?next=: después del login siempre se llega al inicio del panel
+    for (const next of ['/admin/login.', '/admin/xyz', 'https://malicioso.com', '//malicioso.com/admin', '/shampoos']) {
+      await page.context().clearCookies();
+      await page.goto(`/admin/login?next=${encodeURIComponent(next)}`);
+      await page.getByLabel('Email').fill(ADMIN.email);
+      await page.getByLabel('Contraseña').fill(ADMIN.password);
+      await page.getByRole('button', { name: 'Ingresar' }).click();
+      await expect(page, `next=${next}`).toHaveURL(/^http:\/\/localhost:\d+\/admin\/productos$/);
+    }
+  });
+
   test('una cookie de sesión manipulada no da acceso', async ({ page, context }) => {
     await context.addCookies([
       {

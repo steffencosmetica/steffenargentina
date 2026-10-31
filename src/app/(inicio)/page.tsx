@@ -3,6 +3,7 @@ import HeroVideo from '@/components/home/HeroVideo';
 import CountUp from '@/components/home/CountUp';
 import ElasticGallery from '@/components/home/ElasticGallery';
 import ContactSection from '@/components/home/ContactSection';
+import FeaturedProducts from '@/components/tienda/FeaturedProducts';
 import { SITE_DESCRIPTION, SITE_NAME } from '@/lib/site';
 import { baseMetadata } from '@/lib/metadata';
 
@@ -67,6 +68,9 @@ export default function InicioPage() {
 
         <ElasticGallery />
       </section>
+
+      {/* Productos destacados de la tienda (Supabase). Sin destacados no se muestra nada */}
+      <FeaturedProducts />
 
       {/* Quiénes somos */}
       <section className="quienes" id="quienes">

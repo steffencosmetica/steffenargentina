@@ -28,6 +28,8 @@ export type Product = {
   shortDescription: string | null;
   description: string | null;
   usageInstructions: string | null;
+  benefits: string | null;
+  presentation: string | null;
   category: { id: string; name: string; slug: string };
   priceCentavos: Centavos;
   stock: number;
@@ -35,6 +37,7 @@ export type Product = {
   packageMm: { length: number | null; width: number | null; height: number | null };
   isFeatured: boolean;
   sortOrder: number;
+  updatedAt: string;
   // la imagen principal primero, el resto por orden
   images: ProductImage[];
 };
@@ -56,6 +59,8 @@ export type ProductInput = {
   shortDescription?: string | null;
   description?: string | null;
   usageInstructions?: string | null;
+  benefits?: string | null;
+  presentation?: string | null;
   categoryId: string;
   priceCentavos: Centavos;
   stock: number;

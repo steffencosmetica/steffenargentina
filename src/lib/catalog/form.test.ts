@@ -82,3 +82,12 @@ test('describeDbError traduce restricciones conocidas', () => {
   assert.match(describeDbError({ code: '42501', message: 'permission denied' }).message, /permisos/);
   assert.doesNotMatch(describeDbError({ code: 'XX000', message: 'secreto interno' }).message, /secreto/);
 });
+
+test('productFromForm lee beneficios y presentación (vacíos → null)', () => {
+  const lleno = productFromForm(form({ ...valido, benefits: '  Nutre y protege. ', presentation: 'Pomo de 180 cc.' }));
+  assert.equal(lleno.input.benefits, 'Nutre y protege.');
+  assert.equal(lleno.input.presentation, 'Pomo de 180 cc.');
+  const vacio = productFromForm(form({ ...valido, benefits: '   ', presentation: '' }));
+  assert.equal(vacio.input.benefits, null);
+  assert.equal(vacio.input.presentation, null);
+});

@@ -54,6 +54,8 @@ export function productFromForm(form: FormLike): ParsedForm<ProductInput> {
     shortDescription: optionalText(form, 'shortDescription'),
     description: optionalText(form, 'description'),
     usageInstructions: optionalText(form, 'usageInstructions'),
+    benefits: optionalText(form, 'benefits'),
+    presentation: optionalText(form, 'presentation'),
     categoryId: text(form, 'categoryId'),
     priceCentavos: price ?? 0,
     stock,

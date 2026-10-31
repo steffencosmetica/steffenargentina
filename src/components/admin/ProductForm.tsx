@@ -135,8 +135,14 @@ export default function ProductForm({ product, categories }: { product?: AdminPr
             <Field label="Descripción" name="description" optional>
               {(p) => <textarea {...p} className="adm-textarea" rows={5} defaultValue={product?.description ?? ''} />}
             </Field>
+            <Field label="Beneficios" name="benefits" optional error={errors.benefits} hint="Se muestran en una sección propia de la ficha.">
+              {(p) => <textarea {...p} className="adm-textarea" rows={3} maxLength={2000} defaultValue={product?.benefits ?? ''} />}
+            </Field>
             <Field label="Modo de uso" name="usageInstructions" optional>
               {(p) => <textarea {...p} className="adm-textarea" rows={3} defaultValue={product?.usageInstructions ?? ''} />}
+            </Field>
+            <Field label="Presentación" name="presentation" optional error={errors.presentation} hint="Envase y contenido. Ej.: Botella de 1000 cc.">
+              {(p) => <input {...p} className="adm-input" maxLength={300} defaultValue={product?.presentation ?? ''} />}
             </Field>
           </div>
         </div>

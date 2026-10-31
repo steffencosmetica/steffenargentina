@@ -48,3 +48,10 @@ test('categorías y rutas de imágenes', () => {
   assert.equal(isValidStoragePath('/productos/a.webp'), false);
   assert.equal(isValidStoragePath('productos/../../a.webp'), false);
 });
+
+test('beneficios y presentación son opcionales y tienen un largo máximo', () => {
+  assert.deepEqual(validateProductInput({ ...base, benefits: null, presentation: null }), {});
+  assert.deepEqual(validateProductInput({ ...base, benefits: 'Brillo y suavidad.', presentation: 'Botella de 1000 cc.' }), {});
+  assert.match(validateProductInput({ ...base, benefits: 'x'.repeat(2001) }).benefits, /hasta 2000 caracteres/);
+  assert.match(validateProductInput({ ...base, presentation: 'x'.repeat(301) }).presentation, /hasta 300 caracteres/);
+});

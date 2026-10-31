@@ -43,6 +43,10 @@ function requireText(errors: ValidationErrors, field: string, value: string | un
   if (!value || value.trim() === '') errors[field] = `${label} es obligatorio.`;
 }
 
+function checkMaxLength(errors: ValidationErrors, field: string, value: string | null | undefined, max: number, label: string) {
+  if (value && value.trim().length > max) errors[field] = `${label} puede tener hasta ${max} caracteres.`;
+}
+
 function checkInt(errors: ValidationErrors, field: string, value: number | null | undefined, opts: { min: number; label: string }) {
   if (value === null || value === undefined) return;
   if (!Number.isInteger(value) || value < opts.min || value > MAX_INT) {
@@ -71,6 +75,8 @@ export function validateProductInput(input: ProductInput): ValidationErrors {
   }
   if (input.stock === undefined || input.stock === null) errors.stock = 'El stock es obligatorio.';
   else checkInt(errors, 'stock', input.stock, { min: 0, label: 'El stock' });
+  checkMaxLength(errors, 'benefits', input.benefits, 2000, 'Los beneficios');
+  checkMaxLength(errors, 'presentation', input.presentation, 300, 'La presentación');
   checkInt(errors, 'weightGrams', input.weightGrams, { min: 1, label: 'El peso' });
   checkInt(errors, 'packageLengthMm', input.packageLengthMm, { min: 1, label: 'El largo' });
   checkInt(errors, 'packageWidthMm', input.packageWidthMm, { min: 1, label: 'El ancho' });

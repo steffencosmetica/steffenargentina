@@ -89,6 +89,8 @@ export type AdminProduct = {
   shortDescription: string | null;
   description: string | null;
   usageInstructions: string | null;
+  benefits: string | null;
+  presentation: string | null;
   categoryId: string;
   priceCentavos: number;
   stock: number;
@@ -119,6 +121,8 @@ export async function getAdminProduct(id: string): Promise<AdminProduct | null> 
         short_description: string | null;
         description: string | null;
         usage_instructions: string | null;
+        benefits: string | null;
+        presentation: string | null;
         category_id: string;
         price_ars: string;
         stock: number;
@@ -144,6 +148,8 @@ export async function getAdminProduct(id: string): Promise<AdminProduct | null> 
     shortDescription: data.short_description,
     description: data.description,
     usageInstructions: data.usage_instructions,
+    benefits: data.benefits,
+    presentation: data.presentation,
     categoryId: data.category_id,
     priceCentavos: parseCentavos(data.price_ars),
     stock: data.stock,

@@ -20,3 +20,7 @@ export function isSupabaseConfigured() {
 
 // Bucket público con las imágenes del catálogo (ver supabase/migrations/*_catalogo_storage.sql)
 export const CATALOGO_BUCKET = 'catalogo';
+
+// Tag de caché del catálogo público (src/lib/supabase/public.ts). El panel lo invalida con
+// updateTag() después de cada cambio, así la tienda muestra los datos nuevos en la próxima visita.
+export const CATALOGO_TAG = 'catalogo';

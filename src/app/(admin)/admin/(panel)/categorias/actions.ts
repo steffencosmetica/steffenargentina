@@ -7,13 +7,14 @@ import { categoryFromForm } from '@/lib/catalog/form';
 import { validateCategoryInput } from '@/lib/catalog/validation';
 import { toActionError } from '@/lib/admin/action-errors';
 import type { ActionState } from '@/lib/admin/action-state';
+import { CATALOGO_TAG } from '@/lib/supabase/env';
 
 // Server Actions de categorías. Igual que en productos, cada operación de @/lib/catalog/admin
 // verifica requireAdmin() y escribe con la sesión del usuario (RLS).
 
 function refresh() {
   revalidatePath('/admin', 'layout');
-  updateTag('catalogo');
+  updateTag(CATALOGO_TAG);
 }
 
 function id(formData: FormData) {

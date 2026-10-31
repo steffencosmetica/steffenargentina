@@ -75,6 +75,8 @@ function productRow(input: ProductInput) {
     short_description: input.shortDescription?.trim() || null,
     description: input.description?.trim() || null,
     usage_instructions: input.usageInstructions?.trim() || null,
+    benefits: input.benefits?.trim() || null,
+    presentation: input.presentation?.trim() || null,
     category_id: input.categoryId,
     price_ars: priceValue(input.priceCentavos),
     stock: input.stock,

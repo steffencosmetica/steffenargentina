@@ -32,6 +32,8 @@ test.describe.serial('productos', () => {
     await page.getByLabel('Precio público').fill('12.500,50');
     await page.getByLabel('Stock').fill('8');
     await page.getByLabel('Descripción corta').fill('Hidratación profunda.');
+    await page.getByLabel('Beneficios').fill('Nutre y aporta brillo.');
+    await page.getByLabel('Presentación').fill('Pomo de 250 cc.');
     await page.getByLabel('Peso (g)').fill('280');
     await page.getByRole('button', { name: 'Crear producto' }).click();
 
@@ -39,8 +41,8 @@ test.describe.serial('productos', () => {
     await expect(page.getByText('Producto creado. Ahora podés agregarle imágenes.')).toBeVisible();
     productUrl = page.url().replace(/\?.*$/, '');
 
-    const [row] = localSql(`select sku, price_ars::text as price, stock, weight_grams, is_active from public.products where sku = 'E2E-MAS-250'`) as Record<string, unknown>[];
-    expect(row).toMatchObject({ sku: 'E2E-MAS-250', price: '12500.50', stock: 8, weight_grams: 280, is_active: true });
+    const [row] = localSql(`select sku, price_ars::text as price, stock, weight_grams, is_active, benefits, presentation from public.products where sku = 'E2E-MAS-250'`) as Record<string, unknown>[];
+    expect(row).toMatchObject({ sku: 'E2E-MAS-250', price: '12500.50', stock: 8, weight_grams: 280, is_active: true, benefits: 'Nutre y aporta brillo.', presentation: 'Pomo de 250 cc.' });
   });
 
   test('SKU duplicado muestra el error en el campo', async ({ page }) => {
@@ -61,11 +63,17 @@ test.describe.serial('productos', () => {
     await page.getByLabel('Slug (URL)').fill('mascara-nutritiva-300-ml');
     await page.getByLabel('Precio público').fill('14.990');
     await page.getByLabel('Alto (mm)').fill('120');
+    // beneficios vaciado (vuelve a null) y presentación modificada
+    await page.getByLabel('Beneficios').fill('');
+    await page.getByLabel('Presentación').fill('Pomo de 300 cc.');
     await page.getByRole('checkbox', { name: /Destacado/ }).check();
     await page.getByRole('button', { name: 'Guardar cambios' }).click();
     await expect(page.getByText('Cambios guardados.')).toBeVisible();
+    const [campos] = localSql(`select benefits, presentation from public.products where sku = 'E2E-MAS-250'`) as Record<string, unknown>[];
+    expect(campos).toEqual({ benefits: null, presentation: 'Pomo de 300 cc.' });
 
     await page.reload();
+    await expect(page.getByLabel('Presentación')).toHaveValue('Pomo de 300 cc.');
     await expect(page.getByRole('heading', { name: 'Máscara Nutritiva 300 ml', level: 1 })).toBeVisible();
     await expect(page.getByLabel('Precio público')).toHaveValue('14.990');
     await expect(page.getByLabel('Alto (mm)')).toHaveValue('120');

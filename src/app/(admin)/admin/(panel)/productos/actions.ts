@@ -21,6 +21,7 @@ import { productFromForm, quickPriceFromForm, quickStockFromForm } from '@/lib/c
 import { validateProductInput } from '@/lib/catalog/validation';
 import { toActionError } from '@/lib/admin/action-errors';
 import type { ActionState } from '@/lib/admin/action-state';
+import { CATALOGO_TAG } from '@/lib/supabase/env';
 
 // Server Actions de productos. Cada función de @/lib/catalog/admin vuelve a ejecutar requireAdmin()
 // y escribe con la sesión del usuario (RLS): llamar a estas acciones sin ser administrador
@@ -28,8 +29,8 @@ import type { ActionState } from '@/lib/admin/action-state';
 
 function refresh() {
   revalidatePath('/admin', 'layout');
-  // el futuro catálogo público cacheará sus consultas con este tag
-  updateTag('catalogo');
+  // la tienda pública (tienda, fichas, destacados del inicio y sitemap) se renueva en la próxima visita
+  updateTag(CATALOGO_TAG);
 }
 
 function id(formData: FormData) {

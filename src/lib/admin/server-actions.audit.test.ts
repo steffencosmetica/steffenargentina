@@ -11,7 +11,11 @@ import { join } from 'node:path';
 import ts from 'typescript';
 
 const ROOT = join(import.meta.dirname, '..', '..', '..');
-const ADMIN_LIB = join(ROOT, 'src', 'lib', 'catalog', 'admin.ts');
+// Módulos con las operaciones administrativas (cada una debe pasar por requireAdmin()).
+const ADMIN_LIBS: Record<string, string> = {
+  '@/lib/catalog/admin': join(ROOT, 'src', 'lib', 'catalog', 'admin.ts'),
+  '@/lib/shipping/admin': join(ROOT, 'src', 'lib', 'shipping', 'admin.ts'),
+};
 
 // Acciones públicas a propósito: el login (todavía no hay sesión) y el logout (solo cierra la propia)
 const PUBLIC_ACTIONS = new Set(['loginAction', 'logoutAction']);
@@ -35,9 +39,9 @@ function isExported(node: ts.Node) {
   return ts.canHaveModifiers(node) && (ts.getModifiers(node) ?? []).some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
 }
 
-/** Funciones de admin.ts que verifican requireAdmin(), directamente o a través de otra función local. */
-function guardedAdminFunctions() {
-  const source = parse(ADMIN_LIB);
+/** Funciones de un módulo administrativo que verifican requireAdmin(), directamente o a través de otra función local. */
+function guardedAdminFunctions(file: string) {
+  const source = parse(file);
   const bodies = new Map<string, ts.Node>();
   const exported = new Set<string>();
   for (const stmt of source.statements) {
@@ -71,21 +75,24 @@ function serverActionFiles() {
     .filter((f) => /^\s*['"]use server['"]/.test(readFileSync(f, 'utf8')));
 }
 
-test('en admin.ts, toda función exportada que usa la base verifica requireAdmin()', () => {
-  const { guarded, exported, source } = guardedAdminFunctions();
-  const usesDb = (name: string) => {
-    const fn = source.statements.find((s): s is ts.FunctionDeclaration => ts.isFunctionDeclaration(s) && s.name?.text === name);
-    return Boolean(fn?.body && /\bsupabase\b|updateProductFields|setPrimaryProductImage/.test(fn.body.getText()));
-  };
-  for (const name of exported) {
-    if (usesDb(name)) assert.ok(guarded.has(name), `${name} usa la base sin requireAdmin()`);
-  }
-  // el único lugar que crea el cliente con sesión es requireAdmin
-  assert.equal(source.getText().match(/createSessionClient\(\)/g)?.length, 1, 'createSessionClient() solo dentro de requireAdmin');
-});
+for (const [module, file] of Object.entries(ADMIN_LIBS)) {
+  test(`en ${module}, toda función exportada que usa la base o la cotización verifica requireAdmin()`, () => {
+    const { guarded, exported, source } = guardedAdminFunctions(file);
+    const usesDb = (name: string) => {
+      const fn = source.statements.find((s): s is ts.FunctionDeclaration => ts.isFunctionDeclaration(s) && s.name?.text === name);
+      return Boolean(fn?.body && /\bsupabase\b|updateProductFields|setPrimaryProductImage|quoteShipping/.test(fn.body.getText()));
+    };
+    for (const name of exported) {
+      if (usesDb(name)) assert.ok(guarded.has(name), `${module}: ${name} usa la base sin requireAdmin()`);
+    }
+    // el único lugar que crea el cliente con sesión es requireAdmin (en @/lib/catalog/admin)
+    const sessionClients = source.getText().match(/createSessionClient\(\)/g)?.length ?? 0;
+    assert.equal(sessionClients, module === '@/lib/catalog/admin' ? 1 : 0, 'createSessionClient() solo dentro de requireAdmin');
+  });
+}
 
 test('todos los Server Actions administrativos pasan por requireAdmin()', () => {
-  const { guarded } = guardedAdminFunctions();
+  const guardedByModule = new Map(Object.entries(ADMIN_LIBS).map(([module, file]) => [module, guardedAdminFunctions(file).guarded]));
   const files = serverActionFiles();
   assert.ok(files.length >= 3, 'se encontraron los archivos de Server Actions');
 
@@ -94,13 +101,14 @@ test('todos los Server Actions administrativos pasan por requireAdmin()', () => 
     const source = parse(file);
     const text = source.getText();
 
-    // nombres importados de @/lib/catalog/admin (y su alias local)
-    const fromAdmin = new Map<string, string>();
+    // nombres importados de los módulos administrativos: alias local -> [módulo, nombre original]
+    const fromAdmin = new Map<string, [string, string]>();
     for (const stmt of source.statements) {
-      if (ts.isImportDeclaration(stmt) && (stmt.moduleSpecifier as ts.StringLiteral).text === '@/lib/catalog/admin') {
+      const module = ts.isImportDeclaration(stmt) ? (stmt.moduleSpecifier as ts.StringLiteral).text : '';
+      if (ts.isImportDeclaration(stmt) && guardedByModule.has(module)) {
         const named = stmt.importClause?.namedBindings;
         if (named && ts.isNamedImports(named)) {
-          for (const el of named.elements) fromAdmin.set(el.name.text, (el.propertyName ?? el.name).text);
+          for (const el of named.elements) fromAdmin.set(el.name.text, [module, (el.propertyName ?? el.name).text]);
         }
       }
     }
@@ -110,8 +118,12 @@ test('todos los Server Actions administrativos pasan por requireAdmin()', () => 
       const name = stmt.name.text;
       if (PUBLIC_ACTIONS.has(name)) continue;
       const called = [...calls(stmt.body)];
-      const ok = called.some((c) => c === 'requireAdmin' || (fromAdmin.has(c) && guarded.has(fromAdmin.get(c)!)));
-      assert.ok(ok, `${name} (${file}) no llama a requireAdmin() ni a una operación protegida de @/lib/catalog/admin`);
+      const ok = called.some((c) => {
+        if (c === 'requireAdmin') return true;
+        const imported = fromAdmin.get(c);
+        return Boolean(imported && guardedByModule.get(imported[0])!.has(imported[1]));
+      });
+      assert.ok(ok, ` () no llama a requireAdmin() ni a una operación protegida de un módulo administrativo`);
       checked.push(name);
     }
 
@@ -121,7 +133,7 @@ test('todos los Server Actions administrativos pasan por requireAdmin()', () => 
       assert.doesNotMatch(text, /createSessionClient|createClient|createServerClient/, `${file} crea un cliente de Supabase`);
     }
   }
-  assert.ok(checked.length >= 16, `se auditaron ${checked.length} acciones`);
+  assert.ok(checked.length >= 21, `se auditaron ${checked.length} acciones`);
 });
 
 test('las acciones públicas son solo login y logout', () => {

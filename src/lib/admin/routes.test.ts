@@ -13,6 +13,9 @@ test('safeNextPath acepta las pantallas existentes del panel', () => {
     '/admin/categorias',
     '/admin/categorias/nueva',
     `/admin/categorias/${UUID}`,
+    '/admin/envios',
+    '/admin/envios/nueva',
+    `/admin/envios/${UUID}`,
   ]) {
     assert.equal(safeNextPath(path), path, path);
   }

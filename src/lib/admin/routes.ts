@@ -16,6 +16,9 @@ const PANEL_ROUTES = [
   /^\/admin\/categorias$/,
   /^\/admin\/categorias\/nueva$/,
   new RegExp(`^/admin/categorias/${UUID}$`),
+  /^\/admin\/envios$/,
+  /^\/admin\/envios\/nueva$/,
+  new RegExp(`^/admin/envios/${UUID}$`),
 ];
 
 // Filtros del listado de productos que se conservan al volver; el resto de la query se descarta

@@ -131,3 +131,11 @@ export const IconSearch = (p: IconProps) => (
     <path d="m20 20-3.5-3.5" />
   </Svg>
 );
+
+export const IconTruck = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M3 7h11v9H3zM14 10h4l3 3v3h-7" />
+    <circle cx="7" cy="17.5" r="1.5" />
+    <circle cx="17.5" cy="17.5" r="1.5" />
+  </Svg>
+);

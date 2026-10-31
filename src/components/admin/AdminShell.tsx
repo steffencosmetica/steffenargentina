@@ -4,11 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { logoutAction } from '@/app/(admin)/admin/auth-actions';
-import { IconBox, IconClose, IconLogout, IconMenu, IconTag } from './icons';
+import { IconBox, IconClose, IconLogout, IconMenu, IconTag, IconTruck } from './icons';
 
 const NAV = [
   { href: '/admin/productos', label: 'Productos', Icon: IconBox },
   { href: '/admin/categorias', label: 'Categorías', Icon: IconTag },
+  { href: '/admin/envios', label: 'Envíos', Icon: IconTruck },
 ];
 
 function Brand() {

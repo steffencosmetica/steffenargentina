@@ -15,10 +15,14 @@ export const CATALOGO_REVALIDATE = 3600;
 const catalogFetch: typeof fetch = (input, init) =>
   fetch(input, { ...init, next: { revalidate: CATALOGO_REVALIDATE, tags: [CATALOGO_TAG] } });
 
-export function createPublicClient() {
+/**
+ * `cache: false` para lo que tiene que estar siempre al día (cotización de envíos, y en adelante
+ * stock y precios al confirmar un pedido): cada consulta va a la base.
+ */
+export function createPublicClient({ cache = true }: { cache?: boolean } = {}) {
   const { url, key } = getSupabasePublicEnv();
   return createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-    global: { fetch: catalogFetch },
+    global: { fetch: cache ? catalogFetch : (input, init) => fetch(input, { ...init, cache: 'no-store' }) },
   });
 }

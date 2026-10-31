@@ -73,6 +73,60 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"provinces": {
+                  Row: {
+                    "code": string,"name": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "code": string,"name": string
+                  }
+                  Update: {
+                    "code"?: string,"name"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"shipping_zone_provinces": {
+                  Row: {
+                    "province_code": string,"zone_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "province_code": string,"zone_id": string
+                  }
+                  Update: {
+                    "province_code"?: string,"zone_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "shipping_zone_provinces_province_code_fkey"
+      columns: ["province_code"]
+isOneToOne: true
+      referencedRelation: "provinces"
+      referencedColumns: ["code"]
+    },{
+      foreignKeyName: "shipping_zone_provinces_zone_id_fkey"
+      columns: ["zone_id"]
+isOneToOne: false
+      referencedRelation: "shipping_zones"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"shipping_zones": {
+                  Row: {
+                    "created_at": string,"free_from_ars": number | null,"id": string,"is_active": boolean,"name": string,"price_ars": number,"sort_order": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"free_from_ars"?: number | null,"id"?: string,"is_active"?: boolean,"name": string,"price_ars": number,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"free_from_ars"?: number | null,"id"?: string,"is_active"?: boolean,"name"?: string,"price_ars"?: number,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 }
           }
           Views: {
@@ -84,8 +138,28 @@ isOneToOne: false
               "id": string,"stock": number
             }[]
                            },
+"admin_save_zone":
+{ Args: { "p_codes": (string)[],"p_free_from_ars": number,"p_id": string,"p_is_active": boolean,"p_move"?: boolean,"p_name": string,"p_price_ars": number }; Returns: {
+              "added": (string)[],"moved": (string)[],"removed": (string)[],"zone_id": string
+            }[]
+                           },
+"admin_set_zone_provinces":
+{ Args: { "p_codes": (string)[],"p_move"?: boolean,"p_zone_id": string }; Returns: {
+              "added": (string)[],"moved": (string)[],"removed": (string)[]
+            }[]
+                           },
+"cotizar_envio":
+{ Args: { "p_province_code": string,"p_subtotal_ars": number }; Returns: {
+              "cost_ars": number,"free_from_ars": number,"has_coverage": boolean,"is_free": boolean,"rate_ars": number,"zone_id": string,"zone_name": string
+            }[]
+                           },
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"provincias_cobertura":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "code": string,"has_coverage": boolean,"name": string
+            }[]
                            },
 "set_primary_product_image":
 { Args: { "p_image_id": string }; Returns: undefined

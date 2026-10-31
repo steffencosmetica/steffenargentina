@@ -1158,3 +1158,91 @@ body.adm {
 .adm-empty .adm-btn {
   margin-top: 12px;
 }
+
+/* ------------------------------------------------------------------ envíos: provincias por región */
+
+.adm-province-groups {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 1099px) {
+  .adm-province-groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 599px) {
+  .adm-province-groups {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.adm-province-group {
+  margin: 0;
+  padding: 12px 14px 8px;
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius-sm);
+  background: var(--adm-surface-2);
+}
+
+.adm-province-group legend {
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--adm-muted);
+}
+
+.adm-check {
+  /* casilla a la izquierda; nombre (y la zona actual, si tiene) a la derecha, aunque ocupe dos líneas */
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: start;
+  min-height: 36px;
+  padding: 6px 2px;
+  font-size: 14px;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.adm-check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--adm-gold-ink);
+}
+
+.adm-check em {
+  grid-column: 2;
+  font-size: 12px;
+  font-style: normal;
+  color: var(--adm-warning);
+}
+
+.adm-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.adm-chip-list li {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--adm-warning-soft);
+  border: 1px solid #fedf89;
+  color: var(--adm-warning);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.adm-chip-list em {
+  font-style: normal;
+  font-weight: 400;
+}

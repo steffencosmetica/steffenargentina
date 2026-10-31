@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { centavosToDecimal, formatArs, parseCentavos } from './money.ts';
+import { centavosToDecimal, formatArs, formatPesosInput, parseCentavos, parsePesosInput } from './money.ts';
 
 test('parseCentavos convierte importes exactos', () => {
   assert.equal(parseCentavos('12500'), 1_250_000);
@@ -39,4 +39,27 @@ test('ida y vuelta sin pérdida', () => {
   for (const v of ['0.01', '0.29', '1.15', '19.99', '123456.78', '9999999999.99']) {
     assert.equal(centavosToDecimal(parseCentavos(v)), v);
   }
+});
+
+test('parsePesosInput entiende el formato argentino', () => {
+  assert.equal(parsePesosInput('12500'), 1_250_000);
+  assert.equal(parsePesosInput('12.500'), 1_250_000);
+  assert.equal(parsePesosInput('12.500,50'), 1_250_050);
+  assert.equal(parsePesosInput('12500,5'), 1_250_050);
+  assert.equal(parsePesosInput('$ 1.234.567,89'), 123_456_789);
+  assert.equal(parsePesosInput('12500.50'), 1_250_050);
+  assert.equal(parsePesosInput('0,29'), 29);
+  assert.equal(parsePesosInput(' 0 '), 0);
+});
+
+test('parsePesosInput rechaza importes ambiguos o inválidos', () => {
+  for (const v of ['', 'abc', '-100', '12,500.50', '1.23.4', '12.5000', '12,505', '1e5', '10000000000,00']) {
+    assert.equal(parsePesosInput(v), null, v);
+  }
+});
+
+test('formatPesosInput vuelve al formato del formulario', () => {
+  assert.equal(formatPesosInput(1_250_050), '12.500,50');
+  assert.equal(formatPesosInput(1_250_000), '12.500');
+  for (const c of [0, 29, 1_250_050, 123_456_789]) assert.equal(parsePesosInput(formatPesosInput(c)), c);
 });

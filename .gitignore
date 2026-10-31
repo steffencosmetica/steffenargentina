@@ -4,6 +4,7 @@ public/img/*.mov
 # Next.js
 /node_modules
 /.next/
+/.next-e2e/
 /out/
 next-env.d.ts
 *.tsbuildinfo
@@ -16,3 +17,8 @@ next-env.d.ts
 .DS_Store
 npm-debug.log*
 .vercel
+
+# pruebas end-to-end (Playwright)
+/test-results/
+/playwright-report/
+/e2e/.auth/

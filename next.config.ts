@@ -15,6 +15,8 @@ const paginasHtml = [
 const nextConfig: NextConfig = {
   // Servidor autónomo para poder empaquetarlo en Docker (Dokploy)
   output: 'standalone',
+  // las pruebas end-to-end compilan contra Supabase local en otra carpeta, para no pisar el build real
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   poweredByHeader: false,
   experimental: {
     // El sitio tiene dos layouts raíz (inicio y secciones), así que el 404 necesita el suyo propio

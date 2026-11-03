@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import { saveProductAction } from '@/app/(admin)/admin/(panel)/productos/actions';
-import { IDLE } from '@/lib/admin/action-state';
+import { currentStock, IDLE } from '@/lib/admin/action-state';
 import { productFromForm } from '@/lib/catalog/form';
 import { slugify, validateProductInput, type ValidationErrors } from '@/lib/catalog/validation';
 import type { AdminProduct } from '@/lib/catalog/admin-queries';
@@ -18,6 +18,8 @@ export default function ProductForm({ product, categories }: { product?: AdminPr
   const [slug, setSlug] = useState(product?.slug ?? '');
   const [slugTouched, setSlugTouched] = useState(Boolean(product));
 
+  // stock y versión vigentes (se recargan solos si un guardado dio conflicto)
+  const stock = product ? currentStock({ stock: product.stock, version: product.stockVersion }, state) : null;
   const serverErrors = state.status === 'error' ? state.fieldErrors ?? {} : {};
   const errors: ValidationErrors = { ...serverErrors, ...clientErrors };
 
@@ -36,6 +38,7 @@ export default function ProductForm({ product, categories }: { product?: AdminPr
   return (
     <form action={formAction} onSubmit={onSubmit} className="adm-form" noValidate>
       {product && <input type="hidden" name="id" value={product.id} />}
+      {stock && <input type="hidden" name="stockVersion" value={stock.version} />}
       {Object.keys(clientErrors).length > 0 ? (
         <ActionNotice state={{ status: 'error', message: 'Revisá los campos marcados.' }} />
       ) : (
@@ -118,7 +121,16 @@ export default function ProductForm({ product, categories }: { product?: AdminPr
               )}
             </Field>
             <Field label="Stock" name="stock" error={errors.stock} hint="Unidades disponibles para la venta.">
-              {(p) => <input {...p} className="adm-input adm-num" inputMode="numeric" defaultValue={product?.stock ?? 0} required />}
+              {(p) => (
+                <input
+                  {...p}
+                  key={stock?.version ?? 'nuevo'}
+                  className="adm-input adm-num"
+                  inputMode="numeric"
+                  defaultValue={stock?.stock ?? 0}
+                  required
+                />
+              )}
             </Field>
           </div>
         </div>

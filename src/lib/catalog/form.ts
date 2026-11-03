@@ -24,6 +24,16 @@ function parseInteger(value: string) {
   return /^-?\d+$/.test(clean) ? Number(clean) : Number.NaN;
 }
 
+/**
+ * Versión del stock que el panel leyó al mostrar el formulario (campo oculto stockVersion).
+ * null si falta o no es un entero no negativo.
+ */
+export function stockVersionFromForm(form: FormLike): number | null {
+  const value = text(form, 'stockVersion').trim();
+  if (!/^\d{1,15}$/.test(value)) return null;
+  return Number(value);
+}
+
 function optionalInt(form: FormLike, name: string) {
   const value = text(form, name).trim();
   return value === '' ? null : parseInteger(value);

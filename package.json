@@ -11,6 +11,7 @@
     "test:e2e": "playwright test",
     "db:start": "supabase start -x realtime,studio,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor,postgres-meta",
     "db:test": "supabase test db",
+    "test:concurrency": "node --test supabase/tests/concurrency/pedidos.concurrency.test.ts",
     "db:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts"
   },
   "engines": {

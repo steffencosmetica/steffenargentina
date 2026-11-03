@@ -7,7 +7,7 @@ import {
   updatePriceAction,
   updateStockAction,
 } from '@/app/(admin)/admin/(panel)/productos/actions';
-import { IDLE } from '@/lib/admin/action-state';
+import { currentStock, IDLE } from '@/lib/admin/action-state';
 import { formatPesosInput } from '@/lib/money';
 import { IconStar } from './icons';
 import { useFlash } from './ui';
@@ -49,17 +49,21 @@ export function QuickPrice({ id, priceCentavos, name }: { id: string; priceCenta
   );
 }
 
-export function QuickStock({ id, stock, name }: { id: string; stock: number; name: string }) {
+export function QuickStock({ id, stock, stockVersion, name }: { id: string; stock: number; stockVersion: number; name: string }) {
   const [state, action, pending] = useActionState(updateStockAction, IDLE);
   const flash = useFlash(state);
+  // ante un conflicto el campo se recarga con el stock actual (key: se vuelve a montar con la versión nueva)
+  const current = currentStock({ stock, version: stockVersion }, state);
   return (
     <form action={action} className="adm-quick">
       <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="stockVersion" value={current.version} />
       <input
+        key={current.version}
         className="adm-input adm-input-stock"
         name="stock"
         inputMode="numeric"
-        defaultValue={stock}
+        defaultValue={current.stock}
         aria-label={`Stock de ${name}`}
         aria-invalid={state.status === 'error' || undefined}
         readOnly={pending}

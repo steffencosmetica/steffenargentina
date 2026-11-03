@@ -79,7 +79,6 @@ function productRow(input: ProductInput) {
     presentation: input.presentation?.trim() || null,
     category_id: input.categoryId,
     price_ars: priceValue(input.priceCentavos),
-    stock: input.stock,
     weight_grams: input.weightGrams ?? null,
     package_length_mm: input.packageLengthMm ?? null,
     package_width_mm: input.packageWidthMm ?? null,
@@ -174,23 +173,41 @@ export async function deleteCategory(id: string) {
 export async function createProduct(input: ProductInput) {
   assertValid(validateProductInput(input));
   const { supabase } = await requireAdmin();
-  const { data, error } = await supabase.from('products').insert(productRow(input)).select('id').single();
+  // un producto nuevo no tiene reservas: el stock inicial no necesita versión (la base la pone en 0)
+  const { data, error } = await supabase.from('products').insert({ ...productRow(input), stock: input.stock }).select('id').single();
   if (error) throw error;
   return data.id;
 }
 
-export async function updateProduct(id: string, input: ProductInput) {
+/**
+ * Control optimista del stock: el stock se guarda solo si nadie lo cambió desde que el panel lo leyó
+ * (ni una reserva, ni una liberación, ni otro administrador). La base lo hace cumplir en el mismo UPDATE
+ * (trigger products_control_stock): si la versión no coincide, falla con SR003 y no guarda nada.
+ */
+function stockWrite(stock: number, stockVersion: number) {
+  if (!Number.isSafeInteger(stockVersion) || stockVersion < 0) {
+    throw new AdminActionError('Falta la versión del stock: recargá la página y volvé a guardar.');
+  }
+  return { stock, stock_version: stockVersion + 1 };
+}
+
+/** Guarda el formulario completo en un solo UPDATE: si el stock está desactualizado no se guarda nada. */
+export async function updateProduct(id: string, input: ProductInput, stockVersion: number) {
   assertUuid(id);
   assertValid(validateProductInput(input));
   const { supabase } = await requireAdmin();
-  const { data, error } = await supabase.from('products').update(productRow(input)).eq('id', id).select('id');
+  const { data, error } = await supabase
+    .from('products')
+    .update({ ...productRow(input), ...stockWrite(input.stock, stockVersion) })
+    .eq('id', id)
+    .select('id');
   if (error) throw error;
   if (!data.length) throw new AdminActionError('El producto ya no existe.');
 }
 
 async function updateProductFields(
   id: string,
-  fields: { is_active?: boolean; is_featured?: boolean; stock?: number; price_ars?: number },
+  fields: { is_active?: boolean; is_featured?: boolean; price_ars?: number } | { stock: number; stock_version: number },
 ) {
   assertUuid(id);
   const { supabase } = await requireAdmin();
@@ -207,9 +224,10 @@ export function setProductFeatured(id: string, isFeatured: boolean) {
   return updateProductFields(id, { is_featured: isFeatured });
 }
 
-export function setProductStock(id: string, stock: number) {
+/** Edición rápida del stock, con el mismo control optimista que el formulario completo. */
+export function setProductStock(id: string, stock: number, stockVersion: number) {
   if (!Number.isInteger(stock) || stock < 0) throw new RangeError('El stock debe ser un entero mayor o igual a cero.');
-  return updateProductFields(id, { stock });
+  return updateProductFields(id, stockWrite(stock, stockVersion));
 }
 
 export function setProductPrice(id: string, priceCentavos: number) {
@@ -218,8 +236,7 @@ export function setProductPrice(id: string, priceCentavos: number) {
 
 /**
  * Borra un producto y sus imágenes.
- * Hoy no hay tablas comerciales (pedidos) que lo referencien; cuando existan, sus claves foráneas
- * con on delete restrict harán fallar el borrado (23503) y el panel pedirá desactivarlo.
+ * Si tiene pedidos (order_items, on delete restrict) el borrado falla con 23503 y el panel pide desactivarlo.
  * Las filas de product_images se borran en cascada; los archivos se borran después. Si eso falla,
  * el producto ya no existe y los archivos quedan huérfanos: se informan para limpiarlos más tarde.
  */

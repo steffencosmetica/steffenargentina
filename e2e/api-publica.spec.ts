@@ -145,12 +145,19 @@ test.describe.serial('stock privado en la API pública', () => {
     expect((await api.get(`${REST}/products?select=sku,stock`)).status()).toBe(403);
     const rpc = await api.post(`${REST}/rpc/admin_product_stock`, { data: { p_ids: [STORE.neutro, STORE.inactivo] } });
     expect(rpc.status()).toBe(200);
-    expect(((await rpc.json()) as { id: string; stock: number }[]).sort((a, b) => a.id.localeCompare(b.id))).toEqual([
+    const leidos = ((await rpc.json()) as { id: string; stock: number; stock_version: number }[]).sort((a, b) => a.id.localeCompare(b.id));
+    expect(leidos.map(({ id, stock }) => ({ id, stock }))).toEqual([
       { id: STORE.neutro, stock: 20 },
       { id: STORE.inactivo, stock: 10 },
     ]);
+    // el stock viene con su versión: para cambiarlo hay que enviar versión leída + 1 (control optimista)
+    const version = leidos[0].stock_version;
+    expect(Number.isInteger(version)).toBe(true);
+    const sinVersion = await api.patch(`${REST}/products?sku=eq.TND-NEUTRO`, { data: { stock: 3 } });
+    expect((await sinVersion.json()).code).toBe('SR003');
+    expect(stockOf('TND-NEUTRO').stock).toBe(20);
     const edicion = await api.patch(`${REST}/products?sku=eq.TND-NEUTRO&select=sku,availability`, {
-      data: { stock: 3 },
+      data: { stock: 3, stock_version: version + 1 },
       headers: { Prefer: 'return=representation' },
     });
     expect(edicion.status()).toBe(200);
@@ -160,9 +167,10 @@ test.describe.serial('stock privado en la API pública', () => {
     const forzar = await api.patch(`${REST}/products?sku=eq.TND-NEUTRO`, { data: { availability: 'disponible' } });
     expect(forzar.ok()).toBe(false);
     // y la regla de stock no negativo sigue vigente
-    const negativo = await api.patch(`${REST}/products?sku=eq.TND-NEUTRO`, { data: { stock: -1 } });
+    const negativo = await api.patch(`${REST}/products?sku=eq.TND-NEUTRO`, { data: { stock: -1, stock_version: version + 2 } });
     expect((await negativo.json()).code).toBe('23514');
-    await api.patch(`${REST}/products?sku=eq.TND-NEUTRO`, { data: { stock: 20 } });
+    const restaurar = await api.patch(`${REST}/products?sku=eq.TND-NEUTRO`, { data: { stock: 20, stock_version: version + 2 } });
+    expect(restaurar.ok()).toBe(true);
     await api.dispose();
   });
 });

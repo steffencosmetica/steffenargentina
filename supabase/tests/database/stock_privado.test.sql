@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(30);
+select plan(32);
 
 -- ---------------------------------------------------------------------------
 -- Permisos por columna
@@ -106,7 +106,9 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000
 select throws_ok($$ select stock from public.products $$, '42501', null, 'admin: tampoco lee stock con SELECT (usa la función)');
 select is((select stock from public.admin_product_stock(array['20000000-0000-0000-0000-000000000005'::uuid])), 9,
   'el admin lee el stock exacto con admin_product_stock (también de inactivos)');
-select lives_ok($$ update public.products set stock = 2 where sku = 'S-4' $$, 'el admin edita el stock');
+select throws_ok($$ update public.products set stock = 2 where sku = 'S-4' $$, 'SR003', null, 'el admin no puede cambiar el stock sin indicar la versión leída');
+select is((select stock_version from public.admin_product_stock(array['20000000-0000-0000-0000-000000000004'::uuid])), 0::bigint, 'admin_product_stock devuelve la versión del stock');
+select lives_ok($$ update public.products set stock = 2, stock_version = 1 where sku = 'S-4' $$, 'el admin edita el stock con la versión leída + 1');
 select is((select availability from public.products where sku = 'S-4'), 'ultimas', 'la disponibilidad acompaña el cambio del admin');
 
 reset role;

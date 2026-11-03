@@ -1,7 +1,7 @@
 import 'server-only';
 import { redirect, unstable_rethrow } from 'next/navigation';
 import { AdminActionError, AdminAuthError } from '@/lib/catalog/admin';
-import { describeDbError, type DbErrorLike } from '@/lib/catalog/errors';
+import { describeDbError, stockConflictFrom, stockConflictMessage, type DbErrorLike } from '@/lib/catalog/errors';
 import { ValidationError } from '@/lib/catalog/validation';
 import type { ActionState } from './action-state';
 import { loginPath } from './routes';
@@ -23,6 +23,12 @@ export function toActionError(error: unknown): ActionState {
   }
   if (error instanceof AdminActionError || error instanceof RangeError) {
     return { status: 'error', message: error.message };
+  }
+  if (isDbError(error) && error.code === 'SR003') {
+    // conflicto esperable (alguien compró mientras se editaba): no es un error del sistema
+    const current = stockConflictFrom(error);
+    const message = stockConflictMessage(current);
+    return { status: 'error', message, fieldErrors: { stock: message }, stockConflict: current ?? undefined };
   }
   if (isDbError(error)) {
     const friendly = describeDbError(error);

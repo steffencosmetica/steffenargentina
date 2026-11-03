@@ -158,7 +158,7 @@ export default async function ProductosPage({ searchParams }: { searchParams: Se
                       <QuickPrice id={p.id} priceCentavos={p.priceCentavos} name={p.name} />
                     </td>
                     <td data-label="Stock">
-                      <QuickStock id={p.id} stock={p.stock} name={p.name} />
+                      <QuickStock id={p.id} stock={p.stock} stockVersion={p.stockVersion} name={p.name} />
                     </td>
                     <td data-label="Estado">
                       <ActiveToggle id={p.id} isActive={p.isActive} name={p.name} />

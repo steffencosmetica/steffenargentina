@@ -16,6 +16,28 @@ const CONSTRAINTS: Record<string, FriendlyError> = {
   products_category_id_fkey: { field: 'categoryId', message: 'La categoría elegida no existe.' },
 };
 
+/**
+ * Conflicto de stock (SR003, trigger products_control_stock): el stock cambió desde que el panel lo leyó.
+ * La base informa el valor y la versión actuales en details; con eso el formulario recarga el campo.
+ */
+export function stockConflictFrom(error: DbErrorLike): { stock: number; version: number } | null {
+  if (error.code !== 'SR003') return null;
+  try {
+    const detail = JSON.parse(error.details ?? '');
+    if (Number.isSafeInteger(detail.stock) && detail.stock >= 0 && Number.isSafeInteger(detail.stock_version) && detail.stock_version >= 0) {
+      return { stock: detail.stock, version: detail.stock_version };
+    }
+  } catch {
+    // detalle ausente o mal formado: se informa el conflicto sin valores
+  }
+  return null;
+}
+
+export function stockConflictMessage(current: { stock: number } | null) {
+  const ahora = current ? ` Ahora hay ${current.stock} ${current.stock === 1 ? 'unidad disponible' : 'unidades disponibles'}.` : '';
+  return `El stock cambió mientras editabas (una compra, una reserva vencida u otro administrador).${ahora} Revisá el valor y volvé a guardar.`;
+}
+
 export function describeDbError(error: DbErrorLike): FriendlyError {
   const text = `${error.message ?? ''} ${error.details ?? ''}`;
   const constraint = Object.keys(CONSTRAINTS).find((name) => text.includes(name));
@@ -36,6 +58,8 @@ export function describeDbError(error: DbErrorLike): FriendlyError {
       return { message: 'El registro tiene datos asociados que impiden la operación. Desactivalo en lugar de borrarlo.' };
     case '23514':
       return constraint ? CONSTRAINTS[constraint] : { message: 'Algún dato no cumple las reglas del catálogo.' };
+    case 'SR003':
+      return { field: 'stock', message: stockConflictMessage(stockConflictFrom(error)) };
     case '42501':
       return { message: 'Tu sesión no tiene permisos para esta operación. Volvé a iniciar sesión.' };
     case 'PGRST116':

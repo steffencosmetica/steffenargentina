@@ -10,6 +10,9 @@ begin
   delete from public.shipping_zone_provinces;
   delete from public.shipping_zones;
   delete from public.product_images;
+  -- los pedidos de prueba referencian productos (on delete restrict): se borran primero
+  delete from public.orders;
+  delete from public.checkout_attempts;
   delete from public.products;
   delete from public.categories;
   delete from auth.users where email like '%@steffen.test';

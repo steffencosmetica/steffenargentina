@@ -17,7 +17,7 @@ import {
   setProductStock,
   updateProduct,
 } from '@/lib/catalog/admin';
-import { productFromForm, quickPriceFromForm, quickStockFromForm } from '@/lib/catalog/form';
+import { productFromForm, quickPriceFromForm, quickStockFromForm, stockVersionFromForm } from '@/lib/catalog/form';
 import { validateProductInput } from '@/lib/catalog/validation';
 import { toActionError } from '@/lib/admin/action-errors';
 import type { ActionState } from '@/lib/admin/action-state';
@@ -51,7 +51,8 @@ export async function saveProductAction(_prev: ActionState, formData: FormData):
 
   let newId: string | null = null;
   try {
-    if (productId) await updateProduct(productId, input);
+    // edición: el stock se guarda con la versión que se leyó al abrir el formulario (control optimista)
+    if (productId) await updateProduct(productId, input, stockVersionFromForm(formData) ?? Number.NaN);
     else newId = await createProduct(input);
   } catch (error) {
     return toActionError(error);
@@ -77,7 +78,7 @@ export async function updateStockAction(_prev: ActionState, formData: FormData):
   const parsed = quickStockFromForm(formData);
   if ('error' in parsed) return { status: 'error', message: parsed.error };
   try {
-    await setProductStock(id(formData), parsed.stock);
+    await setProductStock(id(formData), parsed.stock, stockVersionFromForm(formData) ?? Number.NaN);
   } catch (error) {
     return toActionError(error);
   }

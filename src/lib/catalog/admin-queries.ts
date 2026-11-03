@@ -14,12 +14,15 @@ function publicUrl(supabase: Supabase, path: string) {
 
 // El stock exacto no se puede leer con SELECT (solo la columna availability, ver
 // supabase/migrations/*_productos_stock_privado.sql): el panel lo pide a admin_product_stock(),
-// que verifica is_admin() en la base.
+// que verifica is_admin() en la base. Junto con el stock viene su versión: para guardar un stock
+// nuevo hay que enviar la versión leída + 1 (control optimista, *_productos_stock_concurrencia.sql).
+type StockRead = { stock: number; version: number };
+
 async function stockByProduct(supabase: Supabase, ids: string[]) {
-  if (!ids.length) return new Map<string, number>();
+  if (!ids.length) return new Map<string, StockRead>();
   const { data, error } = await supabase.rpc('admin_product_stock', { p_ids: ids });
   if (error) throw error;
-  return new Map(data.map((row) => [row.id, row.stock]));
+  return new Map(data.map((row) => [row.id, { stock: row.stock, version: Number(row.stock_version) }]));
 }
 
 export type AdminProductRow = {
@@ -28,6 +31,8 @@ export type AdminProductRow = {
   name: string;
   priceCentavos: number;
   stock: number;
+  /** versión del stock leída junto con él (control optimista) */
+  stockVersion: number;
   isActive: boolean;
   isFeatured: boolean;
   category: { id: string; name: string; isActive: boolean } | null;
@@ -80,7 +85,8 @@ export async function listAdminProducts(filters: AdminProductFilters = {}): Prom
       sku: row.sku,
       name: row.name,
       priceCentavos: parseCentavos(row.price_ars),
-      stock: stock.get(row.id) ?? 0,
+      stock: stock.get(row.id)?.stock ?? 0,
+      stockVersion: stock.get(row.id)?.version ?? 0,
       isActive: row.is_active,
       isFeatured: row.is_featured,
       category: row.category ? { id: row.category.id, name: row.category.name, isActive: row.category.is_active } : null,
@@ -104,6 +110,7 @@ export type AdminProduct = {
   categoryId: string;
   priceCentavos: number;
   stock: number;
+  stockVersion: number;
   weightGrams: number | null;
   packageLengthMm: number | null;
   packageWidthMm: number | null;
@@ -164,7 +171,8 @@ export async function getAdminProduct(id: string): Promise<AdminProduct | null> 
     presentation: data.presentation,
     categoryId: data.category_id,
     priceCentavos: parseCentavos(data.price_ars),
-    stock: stock.get(data.id) ?? 0,
+    stock: stock.get(data.id)?.stock ?? 0,
+    stockVersion: stock.get(data.id)?.version ?? 0,
     weightGrams: data.weight_grams,
     packageLengthMm: data.package_length_mm,
     packageWidthMm: data.package_width_mm,

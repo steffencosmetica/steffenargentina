@@ -27,6 +27,9 @@ export function seedStore() {
 do $$
 begin
   delete from public.product_images;
+  -- los pedidos de prueba referencian productos (on delete restrict): se borran primero
+  delete from public.orders;
+  delete from public.checkout_attempts;
   delete from public.products;
   delete from public.categories;
 

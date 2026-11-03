@@ -205,9 +205,9 @@ select is((select count(*) from public.products), 3::bigint, 'admin: ve también
 select is((select count(*) from public.categories), 2::bigint, 'admin: ve también categorías inactivas');
 select lives_ok($$ insert into public.categories (name, slug) values ('Nueva', 'nueva') $$,
   'admin: puede crear categorías');
-select lives_ok($$ update public.products set price_ars = '15999.90', stock = 3 where sku = 'TEST-1' $$,
+select lives_ok($$ update public.products set price_ars = '15999.90', stock = 3, stock_version = 1 where sku = 'TEST-1' $$,
   'admin: puede cambiar precio y stock');
-select throws_ok($$ update public.products set stock = -1 where sku = 'TEST-1' $$,
+select throws_ok($$ update public.products set stock = -1, stock_version = 2 where sku = 'TEST-1' $$,
   '23514', null, 'admin: tampoco puede dejar stock negativo');
 select lives_ok($$ select public.set_primary_product_image('30000000-0000-0000-0000-000000000002') $$,
   'admin: puede cambiar la imagen principal');

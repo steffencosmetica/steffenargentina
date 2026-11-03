@@ -7,8 +7,8 @@ export default function robots(): MetadataRoute.Robots {
     return { rules: { userAgent: '*', disallow: '/' } };
   }
   return {
-    // el panel de administración además responde con X-Robots-Tag: noindex (src/proxy.ts)
-    rules: { userAgent: '*', allow: '/', disallow: '/admin' },
+    // el panel, el checkout y los pedidos además responden con X-Robots-Tag: noindex (src/proxy.ts, next.config.ts)
+    rules: { userAgent: '*', allow: '/', disallow: ['/admin', '/checkout', '/pedido/', '/api/'] },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

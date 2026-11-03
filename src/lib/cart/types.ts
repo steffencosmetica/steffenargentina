@@ -41,6 +41,9 @@ export type CartQuote = {
 export const MAX_CART_LINES = 50;
 export const MAX_LINE_QUANTITY = 9999;
 
-/** Futura página de checkout (Fase 4B.5). Mientras no exista, «Finalizar compra» queda deshabilitado. */
+/**
+ * Página de checkout (Fase 4B.5). El servidor indica si existe en este despliegue (CartProvider →
+ * checkoutAvailable, ver src/lib/checkout/server.ts): si no, «Finalizar compra» queda deshabilitado.
+ * Comprar además exige checkout_enabled en la base.
+ */
 export const CHECKOUT_PATH = '/checkout';
-export const CHECKOUT_PAGE_READY = false;

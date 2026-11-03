@@ -38,9 +38,20 @@ test('los componentes de cliente no leen secretos ni importan módulos de servid
     for (const [, name] of text.matchAll(/process\.env\.([A-Z0-9_]+)/g)) {
       assert.ok(name.startsWith('NEXT_PUBLIC_'), `${path} lee ${name} en el navegador`);
     }
-    assert.doesNotMatch(text, /from ['"]@\/lib\/orders\/client-ip['"]|from ['"]node:/, `${path} importa código de servidor`);
+    assert.doesNotMatch(
+      text,
+      /from ['"](@\/lib\/orders\/client-ip|@\/lib\/supabase\/admin|@\/lib\/checkout\/server|@\/lib\/cart\/server|@\/lib\/http\/json-api)['"]|from ['"]node:/,
+      `${path} importa código de servidor`,
+    );
     assert.doesNotMatch(text, /sb_secret_|service_role/i, `${path} menciona una clave de servidor`);
   }
+});
+
+test('la clave secreta de Supabase solo se lee en el módulo server-only que crea el cliente de servidor', () => {
+  const readers = sources.filter(({ text }) => /process\.env\.SUPABASE_SECRET_KEY/.test(text)).map(({ path }) => path.replace(/\\/g, '/'));
+  assert.deepEqual(readers, ['src/lib/supabase/admin.ts']);
+  const admin = sources.find(({ path }) => path.replace(/\\/g, '/') === 'src/lib/supabase/admin.ts');
+  assert.match(admin!.text, /^import 'server-only';/m);
 });
 
 test('.env.example no contiene claves reales', () => {

@@ -1,0 +1,747 @@
+/* Checkout y seguimiento de pedidos (Fase 4B.5). Clases con prefijo ck-, dentro de .store (tienda.css ya
+   devuelve cada elemento a su ancho natural y define los colores --store-*). Mobile-first:
+     - celulares y tablets: una columna, resumen plegable arriba, barra de confirmación fija abajo con el total;
+     - escritorio (≥ 960 px): formulario a la izquierda y resumen fijo (sticky) a la derecha. */
+
+.ck {
+  --ck-bar-h: 104px;
+  --ck-radius: 14px;
+  --ck-error: #b3261e;
+  --ck-warn-bg: #fff8e6;
+  --ck-error-bg: #fdecea;
+  --ck-info-bg: #f2f5fa;
+  --ck-focus: 0 0 0 3px rgba(201, 162, 75, 0.45);
+  max-width: 1180px;
+}
+
+.ck .store-heading {
+  margin-bottom: 24px;
+}
+
+.ck-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.ck-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  width: 100%;
+}
+
+.ck-loading,
+.ck-empty {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 40px 0;
+  text-align: center;
+  color: var(--store-muted);
+}
+
+.ck-empty p {
+  margin: 0;
+  font-size: 16px;
+  color: var(--store-ink);
+}
+
+.ck-empty .ck-hint {
+  color: var(--store-muted);
+  font-size: 14px;
+}
+
+/* ------------------------------------------------------------------ formulario */
+
+/* style.css trae reglas globales para los formularios del sitio institucional (form en 2 columnas,
+   `form button` negro alineado a la derecha y gris al pasar el mouse, textarea a 2 columnas y 150 px).
+   Acá se neutralizan con selectores más específicos, sin tocar style.css. */
+.ck .ck-form {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.ck .ck-form button {
+  grid-column: auto;
+  justify-self: stretch;
+  border-radius: 999px;
+}
+
+.ck .ck-form .ck-submit,
+.ck .ck-form .ck-submit:hover {
+  color: #fff;
+  background:
+    linear-gradient(#111, #111) padding-box,
+    conic-gradient(from var(--spin), var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%) border-box;
+}
+
+.ck .ck-form .ck-field textarea {
+  grid-column: auto;
+}
+
+.ck .ck-form .ck-check input {
+  padding: 0;
+  border-radius: 4px;
+}
+
+.ck-form {
+  display: grid;
+  gap: 22px;
+  width: 100%;
+  min-width: 0;
+  /* lugar para la barra fija: ningún campo ni el pie quedan tapados */
+  padding-bottom: calc(var(--ck-bar-h) + 16px);
+}
+
+.ck-fieldset {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 20px 16px;
+  border: 1px solid var(--store-line);
+  border-radius: var(--ck-radius);
+  background: #fff;
+}
+
+.ck-fieldset legend {
+  padding: 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--store-gold-ink);
+}
+
+.ck-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  width: 100%;
+}
+
+.ck-field {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.ck-field label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--store-ink);
+}
+
+.ck-optional {
+  font-weight: 400;
+  color: var(--store-muted);
+}
+
+.ck-field input:not([type='checkbox']),
+.ck-field select,
+.ck-field textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 11px 14px;
+  border: 1px solid #cfcfcf;
+  border-radius: 10px;
+  font-family: 'Montserrat', sans-serif;
+  /* 16 px: iOS no hace zoom al enfocar */
+  font-size: 16px;
+  color: var(--store-ink);
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.ck-field textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.ck-field select {
+  appearance: none;
+  padding-right: 40px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+      no-repeat right 12px center / 18px,
+    #fff;
+}
+
+.ck-field input:focus-visible,
+.ck-field select:focus-visible,
+.ck-field textarea:focus-visible {
+  outline: none;
+  border-color: var(--gold-dark);
+  box-shadow: var(--ck-focus);
+}
+
+.ck-field [aria-invalid='true'] {
+  border-color: var(--ck-error);
+}
+
+.ck-error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ck-error);
+}
+
+.ck-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--store-muted);
+}
+
+.ck-warn,
+.ck-ok {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ck-warn {
+  color: var(--ck-error);
+}
+
+.ck-ok {
+  color: var(--store-ok);
+}
+
+.ck-terms {
+  padding: 4px 2px;
+}
+
+.ck-check {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-weight: 400 !important;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.ck-check input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 1px 0 0;
+  accent-color: var(--gold-dark);
+}
+
+.ck-check input:focus-visible {
+  outline: 3px solid rgba(201, 162, 75, 0.6);
+  outline-offset: 2px;
+}
+
+.ck-banner {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.ck-banner.is-warn {
+  background: var(--ck-warn-bg);
+  border: 1px solid #f0d58a;
+}
+
+.ck-banner.is-error {
+  background: var(--ck-error-bg);
+  border: 1px solid #f3b6b0;
+}
+
+.ck-banner.is-info {
+  background: var(--ck-info-bg);
+  border: 1px solid #d5deeb;
+}
+
+.ck-banner-slot {
+  display: grid;
+  gap: 8px;
+  outline: none;
+}
+
+.ck-banner-slot:empty {
+  display: none;
+}
+
+.ck-error-summary {
+  outline: none;
+}
+
+.ck-error-summary:focus-visible {
+  box-shadow: var(--ck-focus);
+}
+
+.ck-error-summary p {
+  margin: 0 0 6px;
+}
+
+.ck-error-summary ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.ck-error-summary a {
+  color: var(--ck-error);
+  text-decoration: underline;
+}
+
+.ck-link {
+  justify-self: start;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--store-gold-ink);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------------------ barra de confirmación (fija en celulares) */
+
+.ck-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 900;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px 16px;
+  width: 100%;
+  min-height: var(--ck-bar-h);
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--store-line);
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.ck-bar-total {
+  display: grid;
+  line-height: 1.2;
+}
+
+.ck-bar-total span {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--store-muted);
+}
+
+.ck-bar-total strong {
+  font-size: 22px;
+}
+
+.ck-bar-total .ck-bar-change {
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+  text-decoration: line-through;
+}
+
+.ck-submit {
+  width: 100%;
+  min-height: 52px;
+  padding-inline: 16px;
+}
+
+.ck-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.ck-bar-reason {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 12px;
+  color: var(--store-muted);
+}
+
+/* el botón de WhatsApp sube por encima de la barra para no taparla */
+body:has(.ck-bar) .whatsapp-float {
+  bottom: calc(var(--ck-bar-h, 104px) + 18px);
+}
+
+/* ------------------------------------------------------------------ resumen */
+
+.ck-summary {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--store-line);
+  border-radius: var(--ck-radius);
+  background: var(--store-soft);
+}
+
+.ck-summary-title {
+  margin: 0;
+  font-size: inherit;
+}
+
+.ck-summary-toggle {
+  display: grid;
+  grid-template-columns: 1fr auto 20px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: var(--ck-radius);
+  background: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--store-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ck-summary-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--ck-focus);
+}
+
+.ck-summary-toggle svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  transition: transform 0.2s;
+}
+
+.ck-summary-toggle[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+.ck-summary-heading {
+  display: none;
+}
+
+.ck-summary-body {
+  display: none;
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+
+.ck-summary-body.is-open {
+  display: grid;
+}
+
+.ck-lines {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ck-line {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.ck-line-plain {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--store-line);
+}
+
+.ck-line-img {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border: 1px solid var(--store-line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.ck-line-img img {
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.ck-line-img .ck-line-noimg {
+  width: 100%;
+  height: 100%;
+  padding: 12px;
+  opacity: 0.45;
+}
+
+.ck-line-qty {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: #555;
+}
+
+.ck-line-info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ck-line-name {
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.ck-line-meta {
+  font-size: 13px;
+  color: var(--store-muted);
+}
+
+.ck-line-status {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ck-error);
+}
+
+.ck-line-total {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ck-line[data-status='unavailable'] .ck-line-name,
+.ck-line[data-status='out_of_stock'] .ck-line-name {
+  color: var(--store-muted);
+}
+
+.ck-totals {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  margin: 4px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid #e2e0da;
+}
+
+.ck-totals > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.ck-totals dt {
+  color: var(--store-muted);
+}
+
+.ck-totals dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.ck-totals .ck-total-row {
+  padding-top: 8px;
+  border-top: 1px solid #e2e0da;
+  font-size: 18px;
+}
+
+.ck-totals .ck-total-row dt {
+  color: var(--store-ink);
+  font-weight: 700;
+}
+
+.ck-totals .ck-total-row dd {
+  font-weight: 800;
+}
+
+.ck-free-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--store-ok);
+}
+
+/* ------------------------------------------------------------------ seguimiento */
+
+.ck-order {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.ck-card {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  padding: 20px 16px;
+  border: 1px solid var(--store-line);
+  border-radius: var(--ck-radius);
+  background: #fff;
+}
+
+.ck-card h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.ck-kicker {
+  margin: 0;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--store-kicker);
+}
+
+.ck-card .ck-order-code {
+  font-size: 26px;
+  letter-spacing: 2px;
+  text-transform: none;
+}
+
+.ck-states {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.ck-states > div {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--store-soft);
+}
+
+.ck-states dt {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--store-muted);
+}
+
+.ck-states dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+}
+
+.ck-pay {
+  border-color: #f0d58a;
+  background: var(--ck-warn-bg);
+}
+
+.ck-pay p {
+  margin: 0;
+}
+
+.ck-private .store-btn {
+  justify-self: start;
+}
+
+/* ------------------------------------------------------------------ tablet */
+
+@media (min-width: 600px) {
+  .ck-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ck-span-2 {
+    grid-column: 1 / -1;
+  }
+
+  .ck-fieldset,
+  .ck-card {
+    padding: 24px;
+  }
+
+  .ck-bar {
+    grid-template-columns: auto minmax(0, 320px);
+    justify-content: space-between;
+    padding-inline: 24px;
+  }
+}
+
+/* ------------------------------------------------------------------ escritorio */
+
+@media (min-width: 960px) {
+  .ck-layout {
+    grid-template-columns: minmax(0, 1fr) 380px;
+    align-items: start;
+    gap: 32px;
+  }
+
+  .ck-form {
+    grid-column: 1;
+    grid-row: 1;
+    padding-bottom: 0;
+  }
+
+  .ck-summary {
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    top: 110px;
+    max-height: calc(100vh - 130px);
+    overflow: auto;
+  }
+
+  .ck-summary-toggle {
+    display: none;
+  }
+
+  .ck-summary-heading {
+    display: block;
+    padding: 18px 20px 6px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .ck-summary-body,
+  .ck-summary-body.is-open {
+    display: grid;
+    padding: 6px 20px 20px;
+  }
+
+  /* la barra pasa a ser el pie del formulario */
+  .ck-bar {
+    position: static;
+    min-height: 0;
+    padding: 18px 20px;
+    border: 1px solid var(--store-line);
+    border-radius: var(--ck-radius);
+    box-shadow: none;
+  }
+
+  body:has(.ck-bar) .whatsapp-float {
+    bottom: 30px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ck-summary-toggle svg {
+    transition: none;
+  }
+}

@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { LOCAL_SUPABASE } from './e2e/local';
+import { LOCAL_SUPABASE, localSecretKey } from './e2e/local';
 
 // Build aparte SIN STEFFEN_CART_ENABLED: verifica que el carrito no aparece en ninguna página pública y
 // que la ruta de cotización responde 404. Usa Supabase local, otra carpeta de build y otro puerto.
@@ -29,6 +29,8 @@ export default defineConfig({
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: LOCAL_SUPABASE.publishableKey,
       // explícitamente apagado (aunque la variable existiera en el entorno de quien corre las pruebas)
       STEFFEN_CART_ENABLED: '0',
+      // con la clave de servidor presente: el checkout tiene que quedar oculto por el interruptor, no por falta de clave
+      SUPABASE_SECRET_KEY: localSecretKey(),
     },
   },
 });

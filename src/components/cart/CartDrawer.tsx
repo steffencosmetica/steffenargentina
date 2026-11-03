@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { formatArs } from '@/lib/money';
-import { CHECKOUT_PAGE_READY, CHECKOUT_PATH, type QuoteLine } from '@/lib/cart/types';
+import { CHECKOUT_PATH, type QuoteLine } from '@/lib/cart/types';
 import { useCartOptional } from './CartProvider';
 
 // Panel lateral del carrito: diálogo modal (foco atrapado, Escape, foco de vuelta a quien lo abrió,
@@ -201,8 +201,8 @@ export default function CartDrawer() {
             <p className="cart-foot-note">
               {hasProblems ? 'Los productos no disponibles no se suman al subtotal. ' : ''}El envío se calcula al finalizar la compra.
             </p>
-            {CHECKOUT_PAGE_READY ? (
-              <Link href={CHECKOUT_PATH} className="cart-btn cart-btn-primary" prefetch={false}>
+            {cart.checkoutAvailable ? (
+              <Link href={CHECKOUT_PATH} className="cart-btn cart-btn-primary" prefetch={false} onClick={cart.close} data-testid="cart-checkout">
                 Finalizar compra
               </Link>
             ) : (

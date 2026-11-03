@@ -329,19 +329,24 @@ test('drawer: teclado, foco atrapado, Escape, foco restaurado y scroll bloqueado
   await expect(button).toHaveAttribute('aria-label', 'Abrir carrito, 1 unidad');
 });
 
-test('«Finalizar compra» deshabilitado: no lleva a ninguna ruta ni vacía el carrito', async ({ page }) => {
+test('«Finalizar compra» lleva al checkout sin vaciar el carrito ni crear nada', async ({ page }) => {
   await preload(page, [{ productId: STORE.neutro, quantity: 1 }]);
   await page.goto('/tienda');
   await openCart(page);
-  const checkout = drawer(page).getByTestId('cart-checkout');
-  await expect(checkout).toBeDisabled();
-  await expect(drawer(page)).toContainText('La compra online estará disponible muy pronto.');
-  await expect(drawer(page).locator('a[href="/checkout"]')).toHaveCount(0);
   await drawer(page).getByRole('button', { name: 'Seguir comprando' }).click();
   await expect(drawer(page)).toHaveCount(0);
+  await openCart(page);
+  const checkout = drawer(page).getByTestId('cart-checkout');
+  await expect(checkout).toHaveAttribute('href', '/checkout');
+  await checkout.click();
+  await expect(page).toHaveURL(/\/checkout$/);
+  await expect(drawer(page)).toHaveCount(0);
   await expect(page.getByTestId('cart-count').filter({ visible: true })).toHaveText('1');
+  // fuera de e2e/checkout.spec.ts las compras siguen deshabilitadas en la base: el checkout lo informa
+  await expect(page.getByTestId('ck-disabled')).toBeVisible();
   const [s] = localSql('select checkout_enabled from public.store_settings') as { checkout_enabled: boolean }[];
   expect(s.checkout_enabled).toBe(false);
+  expect(localSql('select count(*)::int as n from public.orders')).toEqual([{ n: 0 }]);
 });
 
 test('el carrito está en las páginas institucionales y no en el panel', async ({ page, browser }) => {

@@ -64,8 +64,9 @@ Con la respuesta, `reconcile()`:
 ## API para el checkout (Fase 4B.5)
 
 `useCartOptional()` devuelve `items`, `units`, `quote`, `refreshQuote()` (cotización actual antes de confirmar),
-`clear()` (solo cuando un pedido quede confirmado). «Finalizar compra» está deshabilitado
-(`CHECKOUT_PAGE_READY = false`, `CHECKOUT_PATH = '/checkout'`) y no vacía el carrito.
+`clear()` (solo cuando el pago de un pedido quede confirmado, Fase 5) y `checkoutAvailable`. «Finalizar compra»
+enlaza a `/checkout` donde el servidor habilitó el checkout (Fase 4B.5, ver `supabase/docs/checkout.md`); si no,
+queda deshabilitado. Nunca vacía el carrito.
 
 ## Pruebas
 

@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { LOCAL_SUPABASE } from './e2e/local';
+import { LOCAL_SUPABASE, localSecretKey } from './e2e/local';
 
 // Pruebas end-to-end del panel /admin.
 // Corren SIEMPRE contra Supabase local (npm run db:start): la app se compila con la URL y la clave
@@ -46,6 +46,9 @@ export default defineConfig({
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: LOCAL_SUPABASE.publishableKey,
       // carrito visible solo en este build local (src/lib/cart/flag.ts exige además Supabase local y fuera de Vercel)
       STEFFEN_CART_ENABLED: '1',
+      // checkout (Fase 4B.5): clave secreta del stack LOCAL, leída de `supabase status` (no está en el repo).
+      // Las compras siguen deshabilitadas en la base salvo en e2e/checkout.spec.ts, que las activa y las restaura.
+      SUPABASE_SECRET_KEY: localSecretKey(),
     },
   },
 });

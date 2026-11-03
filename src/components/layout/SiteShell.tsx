@@ -4,6 +4,7 @@ import WhatsAppFloat from './WhatsAppFloat';
 import SiteEffects from './SiteEffects';
 import CartProvider from '@/components/cart/CartProvider';
 import { isCartEnabled } from '@/lib/cart/server';
+import { isCheckoutAvailable } from '@/lib/checkout/server';
 
 type Props = {
   // hoja de Google Fonts que pedía cada página del sitio original (el inicio carga más pesos que el resto).
@@ -39,7 +40,7 @@ export default function SiteShell({ fontHref, footerYear, children }: Props) {
         )}
       </head>
       {/* el carrito lo habilita el servidor (src/lib/cart/flag.ts); sin él, el sitio queda como antes */}
-      <body>{isCartEnabled() ? <CartProvider>{content}</CartProvider> : content}</body>
+      <body>{isCartEnabled() ? <CartProvider checkoutAvailable={isCheckoutAvailable()}>{content}</CartProvider> : content}</body>
     </html>
   );
 }

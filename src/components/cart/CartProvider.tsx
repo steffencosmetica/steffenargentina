@@ -37,8 +37,10 @@ export type CartContextValue = {
   dismissNotices: () => void;
   /** cotización actual del carrito (la usará el checkout antes de confirmar) */
   refreshQuote: () => Promise<CartQuote | null>;
-  /** vacía el carrito: solo cuando un pedido quede confirmado (Fase 4B.5) */
+  /** vacía el carrito: solo cuando el pago de un pedido quede confirmado (Fase 5); crear un pedido pendiente no lo vacía */
   clear: () => void;
+  /** el servidor habilitó la página de checkout en este despliegue */
+  checkoutAvailable: boolean;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -70,7 +72,7 @@ function readStorage(): CartItem[] {
   }
 }
 
-export default function CartProvider({ children }: { children: React.ReactNode }) {
+export default function CartProvider({ children, checkoutAvailable = false }: { children: React.ReactNode; checkoutAvailable?: boolean }) {
   const [hydrated, setHydrated] = useState(false);
   const [items, setItems] = useState<CartItem[]>([]);
   const [quote, setQuote] = useState<CartQuote | null>(null);
@@ -239,8 +241,9 @@ export default function CartProvider({ children }: { children: React.ReactNode }
       dismissNotices: () => setNotices([]),
       refreshQuote,
       clear,
+      checkoutAvailable,
     }),
-    [hydrated, items, quote, quoting, quoteError, notices, feedback, isOpen, open, close, add, setQuantity, remove, refreshQuote, clear],
+    [hydrated, items, quote, quoting, quoteError, notices, feedback, isOpen, open, close, add, setQuantity, remove, refreshQuote, clear, checkoutAvailable],
   );
 
   return (

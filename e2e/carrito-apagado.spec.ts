@@ -23,6 +23,21 @@ test('la ficha sigue ofreciendo la consulta por WhatsApp como acción principal'
   await expect(whatsapp).toHaveClass('store-btn');
 });
 
+test('el checkout y el seguimiento no existen (aunque esté la clave de servidor)', async ({ page, request }) => {
+  for (const path of ['/checkout', '/pedido/STF-2611-ABCD']) {
+    const response = await page.goto(path);
+    expect(response?.status(), path).toBe(404);
+    await expect(page.getByTestId('ck-form')).toHaveCount(0);
+  }
+  const item = { productId: IDS.productoBase, quantity: 1 };
+  const calls = [
+    request.post('/api/checkout/resumen', { data: { items: [item], provinceCode: 'AR-B' } }),
+    request.post('/api/checkout/pedido', { data: { idempotencyKey: 'x'.repeat(43), form: {}, items: [item], expectedTotalCentavos: 100, acceptTerms: true } }),
+    request.post('/api/pedido/consultar', { data: { code: 'STF-2611-ABCD', token: 'a'.repeat(43) } }),
+  ];
+  for (const response of await Promise.all(calls)) expect(response.status(), response.url()).toBe(404);
+});
+
 test('la ruta de cotización no existe', async ({ request }) => {
   const post = await request.post('/api/carrito/cotizar', { data: { items: [{ productId: IDS.productoBase, quantity: 1 }] } });
   expect(post.status()).toBe(404);

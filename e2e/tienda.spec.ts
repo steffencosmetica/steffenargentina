@@ -74,10 +74,10 @@ test.describe.serial('tienda pública', () => {
 
     await page.getByPlaceholder('Buscar por nombre o SKU').fill('tnd-neutro');
     await expect(page.getByTestId('store-card')).toHaveCount(1);
-    await expect(page.getByTestId('store-card')).toContainText('Shampoo Neutro 1000cc');
+    await expect(page.getByTestId('store-card').filter({ visible: true })).toContainText('Shampoo Neutro 1000cc');
 
     await page.getByPlaceholder('Buscar por nombre o SKU').fill('xyz123');
-    await expect(page.getByText('No encontramos productos')).toBeVisible();
+    await expect(page.getByText('No encontramos productos').filter({ visible: true })).toBeVisible();
     await page.getByRole('link', { name: 'Limpiar filtros' }).first().click();
     await expect(page).toHaveURL(/\/tienda$/);
     await expect(page.getByTestId('store-count')).toHaveText(`${VISIBLE_COUNT} productos`);
@@ -228,7 +228,9 @@ test.describe.serial('tienda pública', () => {
     await page.goto('/tienda/shampoo-neutro-1000cc');
     await expect(page.getByTestId('product-price')).toHaveText('$ 13.999,50');
     await page.goto('/tienda?q=neutro');
-    await expect(page.getByTestId('store-card')).toContainText('$ 13.999,50');
+    // { visible: true }: durante el streaming React deja un instante el contenido en un <div hidden> antes de
+    // ubicarlo, y el modo estricto de Playwright también cuenta esa copia oculta (fallaba ~3 de 5 veces desde 4B.4)
+    await expect(page.getByTestId('store-card').filter({ visible: true })).toContainText('$ 13.999,50');
 
     // 2. destacado
     await page.goto('/');
@@ -245,7 +247,7 @@ test.describe.serial('tienda pública', () => {
     await expect(row('TND-BALSAMO').getByRole('button', { name: /^Activar / })).toBeVisible();
     expect((await page.goto('/tienda/balsamo-lino'))?.status()).toBe(404);
     await page.goto('/tienda?q=balsamo');
-    await expect(page.getByText('No encontramos productos')).toBeVisible();
+    await expect(page.getByText('No encontramos productos').filter({ visible: true })).toBeVisible();
     expect(await (await page.request.get('/sitemap.xml')).text()).not.toContain('balsamo-lino');
 
     await row('TND-BALSAMO').getByRole('button', { name: /^Activar / }).click();

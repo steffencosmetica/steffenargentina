@@ -47,7 +47,16 @@ const nextConfig: NextConfig = {
     dangerouslyAllowLocalIP: supabaseLocal,
   },
   async headers() {
-    return isPreview ? [{ source: '/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] }] : [];
+    // checkout y seguimiento de pedidos: nunca indexados ni con Referer (el enlace privado no debe filtrarse).
+    // Las páginas son dinámicas: Next ya les pone Cache-Control no-store; las rutas /api lo ponen ellas.
+    const privatePages = ['/checkout', '/pedido/:path*', '/api/checkout/:path*', '/api/pedido/:path*'].map((source) => ({
+      source,
+      headers: [
+        { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+        { key: 'Referrer-Policy', value: 'no-referrer' },
+      ],
+    }));
+    return isPreview ? [{ source: '/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] }, ...privatePages] : privatePages;
   },
   experimental: {
     // El sitio tiene dos layouts raíz (inicio y secciones), así que el 404 necesita el suyo propio

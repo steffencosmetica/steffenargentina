@@ -48,6 +48,42 @@ function requiredEnv(name: string) {
   return value;
 }
 
+/** Clave secreta del stack LOCAL (para el checkout en las pruebas). Se lee de `supabase status`, nunca del repo. */
+let localSecret: string | undefined;
+export function localSecretKey(): string {
+  if (!localSecret) {
+    const out = execFileSync('npx', ['supabase', 'status', '-o', 'json'], {
+      encoding: 'utf8',
+      shell: process.platform === 'win32',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    const status = JSON.parse(out.slice(out.indexOf('{')));
+    if (status.API_URL !== LOCAL_SUPABASE.url || !status.SECRET_KEY) throw new Error('Supabase local no está levantado (npm run db:start).');
+    localSecret = status.SECRET_KEY as string;
+  }
+  return localSecret;
+}
+
+/** Texto que hay que escribir para confirmar que se habilita el checkout en ESTA base (scripts/checkout-local.ts). */
+export function localCheckoutConfirmation(): string {
+  const db = new URL(LOCAL_SUPABASE.dbUrl);
+  return `local:${db.hostname}:${db.port}`;
+}
+
+/**
+ * Habilita o deshabilita las compras SOLO en la base local (store_settings.checkout_enabled). Lo cambia el rol
+ * postgres, el único que el trigger store_settings_bloquear_checkout deja; localSql no corre contra otro host.
+ * Supabase Cloud no se toca nunca desde acá.
+ */
+export function setLocalCheckout(enabled: boolean): void {
+  localSql(`update public.store_settings set checkout_enabled = ${enabled ? 'true' : 'false'} where id`);
+}
+
+export function localCheckoutEnabled(): boolean {
+  const rows = localSql('select checkout_enabled from public.store_settings where id') as { checkout_enabled: boolean }[];
+  return rows[0]?.checkout_enabled === true;
+}
+
 /** Ejecuta SQL en la base LOCAL. Se niega a correr contra cualquier otro host. */
 export function localSql(sql: string): unknown[] {
   const host = new URL(LOCAL_SUPABASE.dbUrl).hostname;

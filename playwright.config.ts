@@ -10,6 +10,8 @@ const PORT = 3100;
 
 export default defineConfig({
   testDir: './e2e',
+  // el carrito apagado se prueba con su propio build (playwright.carrito-apagado.config.ts)
+  testIgnore: /carrito-apagado\.spec\.ts$/,
   // los tests comparten la base local: uno a la vez
   fullyParallel: false,
   workers: 1,
@@ -42,6 +44,8 @@ export default defineConfig({
       NEXT_DIST_DIR: '.next-e2e',
       NEXT_PUBLIC_SUPABASE_URL: LOCAL_SUPABASE.url,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: LOCAL_SUPABASE.publishableKey,
+      // carrito visible solo en este build local (src/lib/cart/flag.ts exige además Supabase local y fuera de Vercel)
+      STEFFEN_CART_ENABLED: '1',
     },
   },
 });

@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test \"src/**/*.test.ts\"",
     "test:e2e": "playwright test",
+    "test:e2e:carrito-apagado": "playwright test --config playwright.carrito-apagado.config.ts",
     "db:start": "supabase start -x realtime,studio,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor,postgres-meta",
     "db:test": "supabase test db",
     "test:concurrency": "node --test supabase/tests/concurrency/pedidos.concurrency.test.ts",

@@ -5,6 +5,7 @@ public/img/*.mov
 /node_modules
 /.next/
 /.next-e2e/
+/.next-e2e-off/
 /out/
 next-env.d.ts
 *.tsbuildinfo

@@ -295,6 +295,9 @@ isOneToOne: false
 "consultar_pedido":
 { Args: { "p_code": string,"p_token": string }; Returns: Json
                            },
+"cotizar_carrito":
+{ Args: { "p_items": Json }; Returns: Json
+                           },
 "cotizar_envio":
 { Args: { "p_province_code": string,"p_subtotal_ars": number }; Returns: {
               "cost_ars": number,"free_from_ars": number,"has_coverage": boolean,"is_free": boolean,"rate_ars": number,"zone_id": string,"zone_name": string

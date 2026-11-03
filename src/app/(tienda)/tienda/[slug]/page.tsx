@@ -13,7 +13,7 @@ import ProductGallery from '@/components/tienda/ProductGallery';
 import AvailabilityBadge from '@/components/tienda/AvailabilityBadge';
 import ProductSections from '@/components/tienda/ProductSections';
 import RelatedProducts from '@/components/tienda/RelatedProducts';
-import WhatsAppConsult from '@/components/tienda/WhatsAppConsult';
+import ProductPurchase from '@/components/cart/ProductPurchase';
 import ProductJsonLd from '@/components/tienda/ProductJsonLd';
 
 type Props = { params: Promise<{ slug: string }> };
@@ -89,9 +89,9 @@ export default async function ProductoPage({ params }: Props) {
           </span>
           <AvailabilityBadge level={product.availability} />
           {product.shortDescription && <p className="store-product-short">{product.shortDescription}</p>}
-          {/* espacio de la acción de compra: hoy, la consulta por WhatsApp */}
+          {/* acción de compra: «Agregar al carrito» + WhatsApp si el carrito está habilitado; si no, WhatsApp */}
           <div className="store-product-actions">
-            <WhatsAppConsult productName={product.name} />
+            <ProductPurchase productId={product.id} productName={product.name} soldOut={product.availability === 'sin-stock'} />
           </div>
         </div>
       </div>

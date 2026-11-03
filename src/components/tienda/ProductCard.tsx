@@ -4,12 +4,15 @@ import { formatArs } from '@/lib/money';
 import type { Product } from '@/lib/catalog/types';
 import AvailabilityBadge from './AvailabilityBadge';
 import NoImage from './NoImage';
+import AddToCartButton from '@/components/cart/AddToCartButton';
 
 // Ancho real de la foto en cada grilla: 2 columnas en celulares, 3 en tablet, 4 en escritorio
 export const CARD_SIZES = '(max-width: 600px) 46vw, (max-width: 1200px) 31vw, 300px';
 
 /**
- * Tarjeta de producto: toda la tarjeta es un enlace a la ficha.
+ * Tarjeta de producto: foto, nombre y precio son un enlace a la ficha. Con el carrito habilitado, el botón
+ * «Agregar al carrito» va debajo, FUERA del enlace (no se anida un botón en un link); sin carrito no se
+ * renderiza nada más y la tarjeta queda igual que antes.
  * `eager`: la foto se pide sin esperar al scroll; `lcp`: además con prioridad alta (la primera visible).
  */
 export default function ProductCard({
@@ -26,6 +29,7 @@ export default function ProductCard({
   const image = product.images[0];
   const level = product.availability;
   return (
+    <>
     <Link href={`/tienda/${product.slug}`} className="store-card" data-level={level} data-testid="store-card">
       <span className="store-card-media">
         {image ? (
@@ -48,6 +52,8 @@ export default function ProductCard({
         <AvailabilityBadge level={product.availability} />
       </span>
     </Link>
+    <AddToCartButton productId={product.id} productName={product.name} soldOut={level === 'sin-stock'} variant="card" />
+    </>
   );
 }
 

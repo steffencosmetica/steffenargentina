@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { CATALOGO_PDF, PORTAL_PROFESIONAL_URL } from '@/lib/site';
 import { CONTACTO_SALON_EVENT } from '@/lib/eventos';
+import CartButton from '@/components/cart/CartButton';
+import { useCartOptional } from '@/components/cart/CartProvider';
 
 export default function SiteHeader() {
   /* Header: se achica y se vuelve translúcido al bajar */
@@ -31,6 +33,8 @@ export default function SiteHeader() {
   const menuButton = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLElement>(null);
   const pathname = usePathname();
+  // carrito habilitado por el servidor (sin provider, el header queda igual que antes)
+  const cartEnabled = useCartOptional() !== null;
 
   // se cierra al cambiar de página
   useEffect(() => setMenuOpen(false), [pathname]);
@@ -84,7 +88,14 @@ export default function SiteHeader() {
           <a href="/#contacto">CONTACTO</a>
         </nav>
 
-        <a href="/#contacto-salon" className="btn-salon" onClick={onSalonClick}>Sumar a mi salón</a>
+        {cartEnabled ? (
+          <div className="nav-end">
+            <a href="/#contacto-salon" className="btn-salon" onClick={onSalonClick}>Sumar a mi salón</a>
+            <CartButton variant="desktop" />
+          </div>
+        ) : (
+          <a href="/#contacto-salon" className="btn-salon" onClick={onSalonClick}>Sumar a mi salón</a>
+        )}
       </div>
 
       {/* Barra compacta (solo celulares y tablets chicas, ver header-mobile.css) */}
@@ -95,6 +106,7 @@ export default function SiteHeader() {
         <Link href="/tienda" prefetch={false} className="mnav-tienda">
           Tienda
         </Link>
+        <CartButton variant="bar" onOpen={() => setMenuOpen(false)} />
         <button
           ref={menuButton}
           type="button"

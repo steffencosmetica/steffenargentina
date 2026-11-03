@@ -129,7 +129,9 @@ test.describe.serial('tienda pública', () => {
     const href = new URL((await whatsapp.getAttribute('href'))!);
     expect(href.origin + href.pathname).toBe('https://wa.me/5492235590428');
     expect(href.searchParams.get('text')).toBe('Hola, quisiera consultar por el producto Shampoo Neutro 1000cc de Steffen.');
-    await expect(page.getByRole('button', { name: /carrito/i })).toHaveCount(0);
+    // sin checkout todavía: ningún enlace de compra (la ausencia del carrito cuando está apagado la verifica
+    // e2e/carrito-apagado.spec.ts con su propio build; este build lo habilita para e2e/carrito.spec.ts)
+    await expect(page.locator('a[href^="/checkout"]')).toHaveCount(0);
 
     // relacionados: misma categoría, activos, sin el actual, hasta 4
     const related = page.getByTestId('related').getByTestId('store-card');

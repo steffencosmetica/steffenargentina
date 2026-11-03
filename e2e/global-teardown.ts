@@ -1,9 +1,11 @@
-import { localSql } from './local';
+import { localSql, setLocalCheckout } from './local';
 
 // Deja la base LOCAL como estaba: sin catálogo, zonas de envío ni usuarios de prueba.
 // Los tests pgTAP (npm run db:test) asumen un catálogo y una configuración de envíos vacíos.
 // Los archivos subidos al bucket local quedan; se pueden borrar con «Limpiar imágenes sin uso».
 export default async function globalTeardown() {
+  // También se ejecuta cuando una suite falla antes de llegar a su afterAll.
+  setLocalCheckout(false);
   localSql(`
 do $$
 begin

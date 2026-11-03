@@ -599,6 +599,18 @@ test('cancelación, vencimiento y pago simultáneos sobre los mismos pedidos: es
   assert.equal(await stock('pago'), before, 'reservadas al inicio y consumidas al final: el stock disponible es el mismo');
 });
 
+test('dos administradores guardan notas a la vez: solo uno confirma y deja un evento', async () => {
+  const created = result(await psql(crearSql(newKey('notas-admin'), `notas-${RUN}@test.com`, nextIp(), [{ product: 'idem', quantity: 1 }])));
+  assert.equal(created.status, 'created');
+  const id = created.order_id;
+  const version = await sql(`select admin_version from public.orders where id = '${id}'`);
+  const sessions = ['Primero', 'Segundo'].map(note => `set role authenticated; set request.jwt.claim.sub = '${ADMIN_ID}'; select public.admin_operar_pedido('${id}',${version},'notes','${note}');`);
+  const responses = await simultaneas(sessions);
+  assert.equal(responses.filter(r => r.code === 0).length, 1);
+  assert.equal(responses.filter(r => /SR004/.test(r.err)).length, 1, responses.map(r => r.err).join('\n'));
+  assert.equal(await sql(`select count(*) from public.order_events where order_id='${id}' and event_type='notes_updated'`), '1');
+});
+
 test('API: la clave publicable no consulta pedidos y las funciones internas de pago no están expuestas', async () => {
   const status = JSON.parse(
     execFileSync('npx', ['supabase', 'status', '-o', 'json'], { encoding: 'utf8', shell: process.platform === 'win32', stdio: ['ignore', 'pipe', 'pipe'] })

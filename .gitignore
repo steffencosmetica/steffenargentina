@@ -23,3 +23,6 @@ npm-debug.log*
 /test-results/
 /playwright-report/
 /e2e/.auth/
+
+# Capturas y evidencia generada localmente; no forman parte de la publicación.
+/artifacts/

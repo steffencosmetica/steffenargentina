@@ -13,6 +13,7 @@ import ts from 'typescript';
 const ROOT = join(import.meta.dirname, '..', '..', '..');
 // Módulos con las operaciones administrativas (cada una debe pasar por requireAdmin()).
 const ADMIN_LIBS: Record<string, string> = {
+  '@/lib/orders/admin': join(ROOT, 'src', 'lib', 'orders', 'admin.ts'),
   '@/lib/catalog/admin': join(ROOT, 'src', 'lib', 'catalog', 'admin.ts'),
   '@/lib/shipping/admin': join(ROOT, 'src', 'lib', 'shipping', 'admin.ts'),
 };

@@ -1,7 +1,4 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 
 // Supabase local levantado con `npm run db:start` (puertos de supabase/config.toml).
 // La clave publicable se lee de `supabase status` del stack local en ejecución: no hay claves en el repo.
@@ -89,21 +86,15 @@ export function localSql(sql: string): unknown[] {
   const host = new URL(LOCAL_SUPABASE.dbUrl).hostname;
   if (host !== '127.0.0.1' && host !== 'localhost') throw new Error(`localSql solo corre contra la base local (recibió ${host})`);
 
-  const dir = mkdtempSync(join(tmpdir(), 'steffen-e2e-'));
-  const file = join(dir, 'q.sql');
-  writeFileSync(file, sql);
-  try {
-    const out = execFileSync('npx', ['supabase', 'db', 'query', '--db-url', LOCAL_SUPABASE.dbUrl, '-f', file, '--output-format', 'json'], {
-      encoding: 'utf8',
-      shell: process.platform === 'win32',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    // las sentencias sin resultado (DO, INSERT…) no imprimen JSON
-    const start = out.indexOf('{');
-    if (start === -1 || !out.trim()) return [];
-    const parsed = JSON.parse(out.slice(start));
-    return parsed.rows ?? [];
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
+  // El CLI db query puede fallar al abrir conexiones durante las carreras del checkout.
+  // psql usa el mismo contenedor local que la suite de concurrencia, sin shell ni archivos temporales.
+  // Los SELECT de los fixtures devuelven filas JSON; las mutaciones y bloques DO no devuelven filas.
+  const select = /^\s*select\b/i.test(sql);
+  const input = select
+    ? `select coalesce(json_agg(row_to_json(fixture_rows)), '[]'::json) from (${sql.replace(/;\s*$/, '')}) fixture_rows;`
+    : sql;
+  const out = execFileSync('docker', ['exec', '-i', 'supabase_db_steffen-web', 'psql', '-X', '-U', 'postgres', '-d', 'postgres', '-Atq', '-v', 'ON_ERROR_STOP=1'], {
+    input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'],
+  });
+  return select ? JSON.parse(out.trim()) : [];
 }

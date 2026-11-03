@@ -1246,3 +1246,32 @@ body.adm {
   font-style: normal;
   font-weight: 400;
 }
+
+.adm-order-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.adm-order-stats strong { font-size:28px; margin-right:8px; }
+.adm-order-filters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; align-items:end; }
+.adm-order-filters label,.adm-order-detail label { display:grid; gap:6px; min-width:0; }
+.adm-order-table table { width:100%; border-collapse:collapse; font-size:13px; }
+.adm-order-table td,.adm-order-table th { text-align:left; padding:16px 12px; border-top:1px solid var(--adm-border,#e5e2dc); overflow-wrap:anywhere; }
+.adm-order-table small { display:block; margin-top:6px; color:var(--adm-muted,#666); }
+.adm-order-pagination { display:flex; flex-wrap:wrap; gap:16px; align-items:center; }
+.adm-order-detail { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); gap:24px; align-items:start; }
+.adm-order-detail > * { min-width:0; }
+.adm-order-detail p,.adm-order-detail dd { overflow-wrap:anywhere; white-space:pre-wrap; }
+.adm-order-detail h2 { margin-bottom:16px; }
+.adm-order-detail .adm-input { width:100%; min-width:0; }
+.adm-order-detail .adm-btn { white-space:normal; min-width:0; padding-top:8px; padding-bottom:8px; }
+.adm-order-items,.adm-order-events { padding-left:20px; }
+.adm-order-items li,.adm-order-events li { margin-bottom:20px; }
+.adm-order-summary { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; margin-top:20px; }
+.adm-order-summary > div { display:contents; }
+.adm-order-summary dd { margin:0; text-align:right; }
+@media(max-width:1000px) { .adm-order-detail { grid-template-columns:1fr; } .adm-order-filters { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:780px) {
+  .adm-order-table thead { display:none; }
+  .adm-order-table table,.adm-order-table tbody,.adm-order-table tr,.adm-order-table td { display:block; }
+  .adm-order-table tr { padding:12px; border-top:1px solid #e5e2dc; }
+  .adm-order-table td { border:0; padding:6px; }
+  .adm-order-table td::before { content:attr(data-label); display:block; font-size:11px; color:#666; }
+}
+@media(max-width:480px) { .adm-order-filters,.adm-order-stats { grid-template-columns:1fr; } }

@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { LOCAL_SUPABASE, localSecretKey } from './e2e/local';
+import { LOCAL_SUPABASE, SMTP_CANARY, localSecretKey, mailEnv } from './e2e/local';
 
 // Pruebas end-to-end del panel /admin.
 // Corren SIEMPRE contra Supabase local (npm run db:start): la app se compila con la URL y la clave
@@ -49,6 +49,13 @@ export default defineConfig({
       // checkout (Fase 4B.5): clave secreta del stack LOCAL, leída de `supabase status` (no está en el repo).
       // Las compras siguen deshabilitadas en la base salvo en e2e/checkout.spec.ts, que las activa y las restaura.
       SUPABASE_SECRET_KEY: localSecretKey(),
+      // correo (Fase 4B.7): transporte a archivos locales, nunca SMTP real (ver e2e/local.ts)
+      ...mailEnv(),
+      // canario: si este valor aparece en los assets públicos, la auditoría del build falla
+      MAIL_SMTP_PASSWORD: SMTP_CANARY,
+      // páginas legales y Botón de Arrepentimiento: apagados por defecto, encendidos solo en este build local
+      STEFFEN_LEGAL_PAGES: '1',
+      STEFFEN_REVOCATION_ENABLED: '1',
     },
   },
 });

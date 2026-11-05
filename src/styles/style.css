@@ -9,6 +9,12 @@ body {
   color: #111;
   background-color: #fff;
 }
+.footer-legal{display:flex;justify-content:center;flex-wrap:wrap;gap:12px 24px;padding:20px 16px;max-width:1000px;margin:auto}
+.footer-legal a{width:auto;color:inherit;font-size:12px;text-underline-offset:4px}
+.repentance-access{position:fixed;bottom:18px;left:18px;z-index:1050;display:inline-flex;align-items:center;min-height:44px;width:auto;max-width:calc(100vw - 100px);padding:12px 16px;background:#111;color:#fff;border:1px solid #c3a361;font-size:12px;font-weight:600;text-decoration:none;box-shadow:0 2px 8px #0002}
+.repentance-access:focus-visible{outline:3px solid #967334;outline-offset:3px}
+@media(max-width:768px){.repentance-access{bottom:12px;left:12px;padding:12px}.footer{padding-bottom:75px}}
+@media(max-width:959px){body:has(.ck-bar) .repentance-access{bottom:calc(var(--ck-bar-h,104px) + 18px)}}
 
 
 

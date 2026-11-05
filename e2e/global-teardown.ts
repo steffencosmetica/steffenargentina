@@ -9,6 +9,11 @@ export default async function globalTeardown() {
   localSql(`
 do $$
 begin
+  delete from public.revocation_messages;
+  delete from public.revocation_requests;
+  delete from private.revocation_access_tokens;
+  delete from private.revocation_rate_events;
+  delete from private.mail_workers;
   delete from public.shipping_zone_provinces;
   delete from public.shipping_zones;
   delete from public.product_images;

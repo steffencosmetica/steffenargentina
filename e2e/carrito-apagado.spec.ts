@@ -44,3 +44,20 @@ test('la ruta de cotización no existe', async ({ request }) => {
   expect(await post.text()).not.toContain('price');
   expect((await request.get('/api/carrito/cotizar')).status()).toBe(404);
 });
+
+// Fase 4B.7: sin STEFFEN_LEGAL_PAGES ni STEFFEN_REVOCATION_ENABLED (producción por defecto) los borradores
+// legales y el Botón de Arrepentimiento no se publican, y el resto del sitio queda igual.
+test('borradores legales y arrepentimiento ocultos por defecto', async ({ page, request }) => {
+  for (const path of ['/terminos-y-condiciones', '/politica-de-privacidad', '/envios-y-entregas', '/cambios-y-devoluciones', '/arrepentimiento', '/arrepentimiento/recuperar']) {
+    expect((await page.goto(path))?.status(), path).toBe(404);
+  }
+  for (const path of ['/api/arrepentimiento', '/api/arrepentimiento/recuperar', '/api/arrepentimiento/constancia']) {
+    expect((await request.post(path, { data: {} })).status(), path).toBe(404);
+  }
+  for (const path of ['/', '/productos', '/tienda']) {
+    expect((await page.goto(path))?.status(), path).toBe(200);
+    await expect(page.locator('.repentance-access')).toHaveCount(0);
+    await expect(page.locator('footer .footer-legal')).toHaveCount(0);
+    await expect(page.locator('footer a[href="/productos"]')).toHaveCount(1);
+  }
+});

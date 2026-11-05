@@ -179,6 +179,106 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"revocation_events": {
+                  Row: {
+                    "actor_id": string | null,"created_at": string,"id": number,"request_id": string,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actor_id"?: string | null,"created_at"?: string,"id"?: never,"request_id": string,"status": string
+                  }
+                  Update: {
+                    "actor_id"?: string | null,"created_at"?: string,"id"?: never,"request_id"?: string,"status"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "revocation_events_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "revocation_requests"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"revocation_message_attempts": {
+                  Row: {
+                    "attempt": number,"error_code": string | null,"error_detail": string | null,"finished_at": string | null,"id": number,"message_id": string,"outcome": string | null,"started_at": string,"worker": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempt": number,"error_code"?: string | null,"error_detail"?: string | null,"finished_at"?: string | null,"id"?: never,"message_id": string,"outcome"?: string | null,"started_at"?: string,"worker": string
+                  }
+                  Update: {
+                    "attempt"?: number,"error_code"?: string | null,"error_detail"?: string | null,"finished_at"?: string | null,"id"?: never,"message_id"?: string,"outcome"?: string | null,"started_at"?: string,"worker"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "revocation_message_attempts_message_id_fkey"
+      columns: ["message_id"]
+isOneToOne: false
+      referencedRelation: "revocation_messages"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"revocation_message_events": {
+                  Row: {
+                    "action": string,"actor_id": string | null,"created_at": string,"from_status": string | null,"id": number,"message_id": string,"note": string | null,"to_status": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "action": string,"actor_id"?: string | null,"created_at"?: string,"from_status"?: string | null,"id"?: never,"message_id": string,"note"?: string | null,"to_status"?: string | null
+                  }
+                  Update: {
+                    "action"?: string,"actor_id"?: string | null,"created_at"?: string,"from_status"?: string | null,"id"?: never,"message_id"?: string,"note"?: string | null,"to_status"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "revocation_message_events_message_id_fkey"
+      columns: ["message_id"]
+isOneToOne: false
+      referencedRelation: "revocation_messages"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"revocation_messages": {
+                  Row: {
+                    "accepted_at": string | null,"attempts": number,"created_at": string,"id": string,"kind": string,"last_attempt_at": string | null,"last_error": string | null,"last_error_code": string | null,"lease_id": string | null,"locked_until": string | null,"max_attempts": number,"next_attempt_at": string,"provider_message_id": string | null,"recipient": string,"related_message_id": string | null,"request_id": string | null,"status": string,"updated_at": string,"version": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accepted_at"?: string | null,"attempts"?: number,"created_at"?: string,"id"?: string,"kind": string,"last_attempt_at"?: string | null,"last_error"?: string | null,"last_error_code"?: string | null,"lease_id"?: string | null,"locked_until"?: string | null,"max_attempts"?: number,"next_attempt_at"?: string,"provider_message_id"?: string | null,"recipient": string,"related_message_id"?: string | null,"request_id"?: string | null,"status"?: string,"updated_at"?: string,"version"?: number
+                  }
+                  Update: {
+                    "accepted_at"?: string | null,"attempts"?: number,"created_at"?: string,"id"?: string,"kind"?: string,"last_attempt_at"?: string | null,"last_error"?: string | null,"last_error_code"?: string | null,"lease_id"?: string | null,"locked_until"?: string | null,"max_attempts"?: number,"next_attempt_at"?: string,"provider_message_id"?: string | null,"recipient"?: string,"related_message_id"?: string | null,"request_id"?: string | null,"status"?: string,"updated_at"?: string,"version"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "revocation_messages_related_message_id_fkey"
+      columns: ["related_message_id"]
+isOneToOne: false
+      referencedRelation: "revocation_messages"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "revocation_messages_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "revocation_requests"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"revocation_requests": {
+                  Row: {
+                    "code": string,"contact_email": string,"id": string,"idempotency_key": string,"ip_hash": string,"purchase_reference": string,"received_at": string,"status": string,"updated_at": string,"version": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "code"?: string,"contact_email": string,"id"?: string,"idempotency_key": string,"ip_hash": string,"purchase_reference": string,"received_at"?: string,"status"?: string,"updated_at"?: string,"version"?: number
+                  }
+                  Update: {
+                    "code"?: string,"contact_email"?: string,"id"?: string,"idempotency_key"?: string,"ip_hash"?: string,"purchase_reference"?: string,"received_at"?: string,"status"?: string,"updated_at"?: string,"version"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"shipping_zone_provinces": {
                   Row: {
                     "province_code": string,"zone_id": string
@@ -266,6 +366,15 @@ isOneToOne: false
 "admin_cancelar_pedido":
 { Args: { "p_order_id": string }; Returns: undefined
                            },
+"admin_estado_comunicaciones":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"admin_gestionar_arrepentimiento":
+{ Args: { "p_id": string,"p_status": string,"p_version": number }; Returns: undefined
+                           },
+"admin_intervenir_comunicacion":
+{ Args: { "p_action": string,"p_id": string,"p_note": string,"p_version": number }; Returns: undefined
+                           },
 "admin_listar_pedidos":
 { Args: { "p_filters": Json,"p_page"?: number }; Returns: Json
                            },
@@ -293,6 +402,17 @@ isOneToOne: false
               "added": (string)[],"moved": (string)[],"removed": (string)[]
             }[]
                            },
+"canjear_constancia_arrepentimiento":
+{ Args: { "p_ip": unknown,"p_token": string }; Returns: Json
+                           },
+"comunicaciones_reclamar":
+{ Args: { "p_lease_seconds"?: number,"p_limit"?: number,"p_worker": string }; Returns: {
+              "attempt": number,"id": string,"kind": string,"lease_id": string,"payload": Json,"recipient": string
+            }[]
+                           },
+"comunicaciones_resultado":
+{ Args: { "p_error_code"?: string,"p_error_detail"?: string,"p_id": string,"p_lease": string,"p_outcome": string,"p_provider_id"?: string }; Returns: string
+                           },
 "configuracion_checkout":
 { Args: Record<PropertyKey, never>; Returns: {
               "checkout_enabled": boolean,"max_units_per_order": number,"max_units_per_product": number,"reservation_minutes": number
@@ -312,6 +432,9 @@ isOneToOne: false
 "crear_pedido":
 { Args: { "p_buyer": Json,"p_client_ip": unknown,"p_expected_total_ars": number,"p_idempotency_key": string,"p_items": Json,"p_shipping": Json }; Returns: Json
                            },
+"estado_comunicaciones":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
@@ -326,8 +449,14 @@ isOneToOne: false
 "purgar_intentos_checkout":
 { Args: { "p_dias"?: number }; Returns: number
                            },
+"registrar_arrepentimiento":
+{ Args: { "p_email": string,"p_ip": unknown,"p_key": string,"p_reference": string }; Returns: Json
+                           },
 "set_primary_product_image":
 { Args: { "p_image_id": string }; Returns: undefined
+                           },
+"solicitar_recuperacion_arrepentimiento":
+{ Args: { "p_email": string,"p_ip": unknown }; Returns: Json
                            }
           }
           Enums: {

@@ -7,6 +7,7 @@ const UUID = '368333c6-3a18-4edb-8cf7-0fee1812d2ed';
 test('safeNextPath acepta las pantallas existentes del panel', () => {
   for (const path of [
     '/admin',
+    '/admin/arrepentimientos',
     '/admin/productos',
     '/admin/productos/nuevo',
     `/admin/productos/${UUID}`,

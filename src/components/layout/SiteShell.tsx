@@ -5,6 +5,8 @@ import SiteEffects from './SiteEffects';
 import CartProvider from '@/components/cart/CartProvider';
 import { isCartEnabled } from '@/lib/cart/server';
 import { isCheckoutAvailable } from '@/lib/checkout/server';
+import Link from 'next/link';
+import { isLegalPagesEnabled, isRevocationEnabled } from '@/lib/legal/flag';
 
 type Props = {
   // hoja de Google Fonts que pedía cada página del sitio original (el inicio carga más pesos que el resto).
@@ -19,9 +21,10 @@ export default function SiteShell({ fontHref, footerYear, children }: Props) {
   const content = (
     <>
       <SiteHeader />
+      {isRevocationEnabled() && <Link href="/arrepentimiento" prefetch={false} className="repentance-access">Botón de Arrepentimiento</Link>}
       {children}
       <WhatsAppFloat />
-      <SiteFooter year={footerYear} />
+      <SiteFooter year={footerYear} legalLinks={isLegalPagesEnabled()} />
       <SiteEffects />
     </>
   );

@@ -431,7 +431,7 @@ export default function CheckoutForm({ provinces }: Props) {
                 if (e.target.checked) setErrors((list) => list.filter((x) => x !== 'terms'));
               }}
             />
-            <span>Acepto los términos y condiciones de compra y la política de privacidad de Steffen.</span>
+            <span>Acepto los <Link href="/terminos-y-condiciones" target="_blank" rel="noopener">términos y condiciones</Link> de compra y la <Link href="/politica-de-privacidad" target="_blank" rel="noopener">política de privacidad</Link> de Steffen.</span>
           </label>
           {fieldError('terms')}
         </div>

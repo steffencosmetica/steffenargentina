@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { join } from 'node:path';
 
 // Supabase local levantado con `npm run db:start` (puertos de supabase/config.toml).
 // La clave publicable se lee de `supabase status` del stack local en ejecución: no hay claves en el repo.
@@ -98,3 +99,27 @@ export function localSql(sql: string): unknown[] {
   });
   return select ? JSON.parse(out.trim()) : [];
 }
+
+/**
+ * Correo de las pruebas (Fase 4B.7): transporte «archivo», que escribe cada email como JSON en una carpeta
+ * local y nunca abre conexiones de red. El token del monitor es un valor fijo SOLO de pruebas locales.
+ */
+export const MAIL_E2E = {
+  captureDir: join(process.cwd(), '.mail-capturas-e2e'),
+  from: 'Steffen Cosmética Capilar <info@steffenargentina.com.ar>',
+  linkBaseUrl: 'http://localhost:3100',
+  healthToken: 'e2e-monitor-local-0123456789abcdefghijklmnop',
+};
+
+export function mailEnv(): Record<string, string> {
+  return {
+    MAIL_TRANSPORT: 'archivo',
+    MAIL_CAPTURE_DIR: MAIL_E2E.captureDir,
+    MAIL_FROM: MAIL_E2E.from,
+    MAIL_LINK_BASE_URL: MAIL_E2E.linkBaseUrl,
+    MAIL_HEALTH_TOKEN: MAIL_E2E.healthToken,
+  };
+}
+
+/** Valor ficticio (no es un secreto) que se pasa como MAIL_SMTP_PASSWORD al build de pruebas para auditar el bundle. */
+export const SMTP_CANARY = 'canario-smtp-no-es-secreto-4b7';

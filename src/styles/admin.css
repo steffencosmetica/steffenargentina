@@ -1275,3 +1275,10 @@ body.adm {
   .adm-order-table td::before { content:attr(data-label); display:block; font-size:11px; color:#666; }
 }
 @media(max-width:480px) { .adm-order-filters,.adm-order-stats { grid-template-columns:1fr; } }
+.adm-comm-list{list-style:none;padding:0;margin:8px 0 16px;display:grid;gap:12px}
+.adm-comm{border:1px solid #e2e2e2;padding:12px 14px;border-radius:6px}
+.adm-comm p{margin:4px 0}
+.adm-comm details{margin-top:8px}
+.adm-comm-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.adm-comm-confirm{flex-basis:100%}
+.adm-comm-confirm textarea{display:block;width:100%;margin:6px 0 8px;font:inherit;padding:8px;box-sizing:border-box}

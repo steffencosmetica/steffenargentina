@@ -9,6 +9,7 @@ export type LoginReason = 'expirada' | 'sin-permiso' | 'salida';
 // (el propio login, variantes como "/admin/login.", rutas inexistentes o fuera del panel) va al inicio.
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const PANEL_ROUTES = [
+  /^\/admin\/arrepentimientos$/,
   /^\/admin\/pedidos$/,
   new RegExp(`^/admin/pedidos/${UUID}$`),
   /^\/admin$/,

@@ -26,3 +26,7 @@ npm-debug.log*
 
 # Capturas y evidencia generada localmente; no forman parte de la publicación.
 /artifacts/
+
+# capturas locales de email (transporte archivo)
+/.mail-capturas/
+/.mail-capturas-e2e/

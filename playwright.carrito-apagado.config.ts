@@ -29,6 +29,9 @@ export default defineConfig({
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: LOCAL_SUPABASE.publishableKey,
       // explícitamente apagado (aunque la variable existiera en el entorno de quien corre las pruebas)
       STEFFEN_CART_ENABLED: '0',
+      // páginas legales y arrepentimiento explícitamente apagados (comportamiento por defecto en producción)
+      STEFFEN_LEGAL_PAGES: '0',
+      STEFFEN_REVOCATION_ENABLED: '0',
       // con la clave de servidor presente: el checkout tiene que quedar oculto por el interruptor, no por falta de clave
       SUPABASE_SECRET_KEY: localSecretKey(),
     },

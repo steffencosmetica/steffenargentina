@@ -49,7 +49,7 @@ const nextConfig: NextConfig = {
   async headers() {
     // checkout y seguimiento de pedidos: nunca indexados ni con Referer (el enlace privado no debe filtrarse).
     // Las páginas son dinámicas: Next ya les pone Cache-Control no-store; las rutas /api lo ponen ellas.
-    const privatePages = ['/checkout', '/pedido/:path*', '/api/checkout/:path*', '/api/pedido/:path*'].map((source) => ({
+    const privatePages = ['/checkout', '/pedido/:path*', '/api/checkout/:path*', '/api/pedido/:path*', '/arrepentimiento/:path*', '/api/arrepentimiento/:path*', '/api/interno/:path*'].map((source) => ({
       source,
       headers: [
         { key: 'X-Robots-Tag', value: 'noindex, nofollow' },

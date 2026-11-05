@@ -628,6 +628,17 @@ test('accesibilidad: etiquetas, autocompletado, teclado y anuncios', async ({ pa
   await fillForm(page, { email: 'teclado@steffen.test' });
   await page.getByLabel(/Acepto los términos/).focus();
   await page.keyboard.press('Tab');
+  // Fase 4B.7: ambos documentos son enlaces accesibles entre la casilla y confirmar.
+  const terms = page.getByTestId('ck-form').getByRole('link', { name: 'términos y condiciones', exact: true });
+  await expect(terms).toBeFocused();
+  await expect(terms).toHaveAttribute('href', '/terminos-y-condiciones');
+  await expect(terms).toHaveAttribute('target', '_blank');
+  await page.keyboard.press('Tab');
+  const privacy = page.getByTestId('ck-form').getByRole('link', { name: 'política de privacidad', exact: true });
+  await expect(privacy).toBeFocused();
+  await expect(privacy).toHaveAttribute('href', '/politica-de-privacidad');
+  await expect(privacy).toHaveAttribute('target', '_blank');
+  await page.keyboard.press('Tab');
   await expect(submit(page)).toBeFocused();
   await page.keyboard.press('Enter');
   await waitForOrderPage(page);

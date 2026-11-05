@@ -4,8 +4,8 @@ import type { Database } from './database.types';
 import { getSupabasePublicEnv } from './env';
 
 // Cliente con la clave SECRETA de Supabase (rol service_role), solo para el servidor de Next.
-// Se usa únicamente para las dos funciones que la base reserva al servidor: crear_pedido() y
-// consultar_pedido() (ver supabase/docs/pedidos.md §7). Aun con esta clave la base no deja escribir
+// Se usa para las funciones reservadas al servidor: crear_pedido(), consultar_pedido() y
+// registrar_arrepentimiento(). Aun con esta clave la base no deja escribir
 // tablas de pedidos, ejecutar funciones privadas (pagos), habilitar el checkout ni cambiar stock sin versión.
 //
 // SUPABASE_SECRET_KEY: variable de servidor, NUNCA con prefijo NEXT_PUBLIC_ (la auditoría

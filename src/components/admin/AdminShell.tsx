@@ -8,6 +8,7 @@ import { IconBox, IconClose, IconLogout, IconMenu, IconTag, IconTruck } from './
 
 const NAV = [
   { href: '/admin/pedidos', label: 'Pedidos', Icon: IconBox },
+  { href: '/admin/arrepentimientos', label: 'Arrepentimientos', Icon: IconBox },
   { href: '/admin/productos', label: 'Productos', Icon: IconBox },
   { href: '/admin/categorias', label: 'Categorías', Icon: IconTag },
   { href: '/admin/envios', label: 'Envíos', Icon: IconTruck },
@@ -26,7 +27,7 @@ function Brand() {
 }
 
 /** Estructura del panel: sidebar fija en desktop; en mobile, barra superior con menú desplegable. */
-export default function AdminShell({ email, children }: { email: string; children: React.ReactNode }) {
+export default function AdminShell({ email, showRevocations = false, children }: { email: string; showRevocations?: boolean; children: React.ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -59,7 +60,7 @@ export default function AdminShell({ email, children }: { email: string; childre
       <aside className="adm-sidebar" id="adm-sidebar" aria-label="Menú del panel">
         <Brand />
         <nav className="adm-nav" aria-label="Secciones">
-          {NAV.map(({ href, label, Icon }) => (
+          {NAV.filter(({ href }) => showRevocations || href !== '/admin/arrepentimientos').map(({ href, label, Icon }) => (
             <Link key={href} href={href} aria-current={pathname.startsWith(href) ? 'page' : undefined}>
               <Icon />
               {label}

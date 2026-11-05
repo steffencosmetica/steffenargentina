@@ -1,0 +1,54 @@
+begin;
+select no_plan();
+insert into auth.users(id,email) values ('bc700000-0000-4000-8000-000000000001','legal-admin@steffen.test');
+insert into public.admin_users(user_id) values ('bc700000-0000-4000-8000-000000000001');
+
+select ok(bool_and(relrowsecurity),'RLS en solicitudes e historial') from pg_class where oid in ('public.revocation_requests'::regclass,'public.revocation_events'::regclass);
+select ok(not has_function_privilege(r,'public.registrar_arrepentimiento(text,text,uuid,inet)','execute'),r || ' sin RPC de recepción') from unnest(array['anon','authenticated']) r;
+select ok(has_function_privilege('service_role','public.registrar_arrepentimiento(text,text,uuid,inet)','execute'),'recepción solo servidor');
+select ok(not has_function_privilege(r,'public.admin_gestionar_arrepentimiento(uuid,integer,text)','execute'),r || ' sin RPC administrativa') from unnest(array['anon','service_role']) r;
+select ok(not has_table_privilege(r,t,p),r || ' sin escritura directa ' || t || ' ' || p) from unnest(array['anon','authenticated','service_role']) r cross join unnest(array['public.revocation_requests','public.revocation_events']) t cross join unnest(array['insert','update','delete','truncate']) p;
+select ok(bool_and(prosecdef and proconfig @> array['search_path=""']),'definer con ruta vacía') from pg_proc where oid in ('public.registrar_arrepentimiento(text,text,uuid,inet)'::regprocedure,'public.admin_gestionar_arrepentimiento(uuid,integer,text)'::regprocedure);
+
+set local role service_role;
+select lives_ok($$select public.registrar_arrepentimiento('FICTICIO-LEGAL','persona@example.test','bc700000-0000-4000-8000-000000000002','192.0.2.70')$$,'recibe sin conocer un pedido ni habilitar checkout');
+select lives_ok($$select public.registrar_arrepentimiento('FICTICIO-LEGAL','persona@example.test','bc700000-0000-4000-8000-000000000002','192.0.2.70')$$,'reintento idempotente');
+select throws_ok($$select public.registrar_arrepentimiento('OTRO','otra@example.test','bc700000-0000-4000-8000-000000000002','192.0.2.70')$$,'22023','Solicitud no válida','clave ajena no revela datos');
+select throws_ok($$select public.registrar_arrepentimiento('FICTICIO','mal','bc700000-0000-4000-8000-000000000003','192.0.2.70')$$,'22023','Solicitud no válida','email inválido');
+select throws_ok($$select code from public.revocation_requests$$,'42501',null,'service_role no consulta tabla privada');
+reset role;
+select is((select count(*)::int from public.revocation_requests where purchase_reference='FICTICIO-LEGAL'),1,'un solo registro');
+select is((select count(*)::int from public.revocation_events),1,'un solo evento de recepción');
+select ok((select code ~ '^ARR-[A-F0-9]{32}$' and received_at is not null and status='recibida' and octet_length(ip_hash)=32 from public.revocation_requests where purchase_reference='FICTICIO-LEGAL'),'código, fecha, estado y hash sin IP original');
+select ok(not exists(select 1 from information_schema.columns where table_name='revocation_events' and column_name in ('contact_email','purchase_reference','ip_hash')),'auditoría sin datos de compra o contacto');
+
+set local role anon;
+select throws_ok($$select code from public.revocation_requests$$,'42501',null,'anon no lee solicitudes');
+select throws_ok($$select public.registrar_arrepentimiento('FICTICIO','persona@example.test',gen_random_uuid(),'192.0.2.70')$$,'42501',null,'anon no ejecuta recepción');
+reset role;
+select set_config('request.jwt.claim.sub','bc700000-0000-4000-8000-000000000099',true);
+set local role authenticated;
+select is((select count(*)::int from public.revocation_requests),0,'no administrador no lee solicitudes por RLS');
+select is((select count(*)::int from public.revocation_events),0,'no administrador no lee historial por RLS');
+select throws_ok($$select ip_hash from public.revocation_requests$$,'42501',null,'hash oculto incluso a authenticated');
+select throws_ok($$select public.admin_gestionar_arrepentimiento('bc700000-0000-4000-8000-000000000002',0,'en_gestion')$$,'42501',null,'guard antes de consultar existencia');
+reset role;
+select set_config('request.jwt.claim.sub','bc700000-0000-4000-8000-000000000001',true);
+set local role authenticated;
+select is((select count(*)::int from public.revocation_requests),1,'administrador puede leer');
+select throws_ok($$select public.admin_gestionar_arrepentimiento((select id from public.revocation_requests limit 1),0,'cerrada')$$,'22023','Transición no válida','no salta gestión');
+select lives_ok($$select public.admin_gestionar_arrepentimiento((select id from public.revocation_requests limit 1),0,'en_gestion')$$,'comienza gestión');
+select throws_ok($$select public.admin_gestionar_arrepentimiento((select id from public.revocation_requests limit 1),0,'cerrada')$$,'SR004',null,'versión obsoleta no sobrescribe');
+select lives_ok($$select public.admin_gestionar_arrepentimiento((select id from public.revocation_requests limit 1),1,'cerrada')$$,'cierra solicitud');
+select is((select count(*)::int from public.revocation_events),3,'historial transaccional sin duplicados');
+select is((select version from public.revocation_requests limit 1),2,'cada cambio incrementa versión');
+reset role;
+
+select public.registrar_arrepentimiento('FICTICIO','persona@example.test',gen_random_uuid(),'192.0.2.70') from generate_series(1,4);
+select is(public.registrar_arrepentimiento('FICTICIO','persona@example.test',gen_random_uuid(),'192.0.2.70'),'{"limited":true}'::jsonb,'quinta adicional se limita');
+select ok(public.registrar_arrepentimiento('FICTICIO-LEGAL','persona@example.test','bc700000-0000-4000-8000-000000000002','192.0.2.70') ? 'code','reintento no pierde constancia al alcanzar límite');
+select is((select count(*)::int from public.orders),0,'no crea pedidos');
+select is((select count(*)::int from public.checkout_attempts),0,'no crea intentos de checkout');
+select is((select checkout_enabled from public.store_settings where id),false,'checkout sigue apagado');
+select * from finish();
+rollback;

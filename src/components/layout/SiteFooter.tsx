@@ -4,9 +4,11 @@ import { FACEBOOK_URL, INSTAGRAM_URL, WHATSAPP_NUMERO, WHATSAPP_URL } from '@/li
 type Props = {
   // el sitio original muestra © 2024 en el inicio y © 2025 en el resto de las páginas
   year: number;
+  // páginas legales publicadas (src/lib/legal/flag.ts); apagado, el footer queda como antes
+  legalLinks?: boolean;
 };
 
-export default function SiteFooter({ year }: Props) {
+export default function SiteFooter({ year, legalLinks = false }: Props) {
   return (
     <footer className="footer">
       {/* los enlaces son inline: los espacios entre ellos forman parte de la separación original */}
@@ -17,6 +19,13 @@ export default function SiteFooter({ year }: Props) {
         <Link href="/catalogo" prefetch={false}>CATÁLOGO</Link>{' '}
         <a href="/#contacto">CONTACTO</a>
       </div>
+
+      {legalLinks && <nav className="footer-legal" aria-label="Información legal y comercial">
+        <Link href="/terminos-y-condiciones" prefetch={false}>Términos y condiciones</Link>
+        <Link href="/politica-de-privacidad" prefetch={false}>Privacidad</Link>
+        <Link href="/envios-y-entregas" prefetch={false}>Envíos y entregas</Link>
+        <Link href="/cambios-y-devoluciones" prefetch={false}>Cambios y devoluciones</Link>
+      </nav>}
 
       <div className="footer-info">
         <p>© {year} Steffen Cosmética Capilar. Uso profesional.</p>

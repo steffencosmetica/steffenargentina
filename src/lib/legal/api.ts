@@ -1,7 +1,7 @@
 import 'server-only';
 import { NextRequest, type NextResponse } from 'next/server';
 import { json, readJsonBody } from '@/lib/http/json-api';
-import { LOCAL_DEV_IP, trustedClientIp, trustedProxyFromEnv } from '@/lib/orders/client-ip';
+import { clientIpFor } from '@/lib/orders/client-ip';
 
 // Utilidades compartidas por las rutas públicas del arrepentimiento (recepción, recuperación y canje).
 
@@ -29,8 +29,5 @@ export async function readBoundedJson(request: NextRequest, maxBytes: number): P
 
 /** IP confiable para los límites antiabuso (la base solo guarda su HMAC). null: no se puede atender. */
 export function revocationClientIp(request: NextRequest): string | null {
-  const ip = trustedClientIp(request.headers, trustedProxyFromEnv(process.env));
-  if (ip) return ip;
-  const local = ['localhost', '127.0.0.1'].includes(new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'http://invalid').hostname);
-  return !process.env.VERCEL && (local || process.env.NODE_ENV !== 'production') ? LOCAL_DEV_IP : null;
+  return clientIpFor(request.headers, process.env);
 }

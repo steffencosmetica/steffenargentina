@@ -11,7 +11,8 @@ const PORT = 3100;
 export default defineConfig({
   testDir: './e2e',
   // el carrito apagado se prueba con su propio build (playwright.carrito-apagado.config.ts)
-  testIgnore: /carrito-apagado\.spec\.ts$/,
+  // el arnés de Traefik real necesita su red Docker y su propio build (playwright.proxy.config.ts)
+  testIgnore: /(carrito-apagado|proxy-traefik)\.spec\.ts$/,
   // los tests comparten la base local: uno a la vez
   fullyParallel: false,
   workers: 1,

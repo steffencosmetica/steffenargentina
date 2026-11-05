@@ -123,3 +123,22 @@ export function mailEnv(): Record<string, string> {
 
 /** Valor ficticio (no es un secreto) que se pasa como MAIL_SMTP_PASSWORD al build de pruebas para auditar el bundle. */
 export const SMTP_CANARY = 'canario-smtp-no-es-secreto-4b7';
+
+/**
+ * Arnés de Traefik real (Fase 4B.8): red Docker propia con un Traefik bien configurado, otro deliberadamente
+ * mal configurado (forwardedHeaders.insecure) y clientes con IPs distintas. El secreto es un valor fijo SOLO
+ * de pruebas locales (no es una credencial).
+ */
+export const PROXY_E2E = {
+  port: 3102,
+  network: 'steffen-proxy-e2e',
+  subnet4: '172.31.250.0/24',
+  subnet6: 'fd5e:12::/64',
+  traefikImage: 'traefik:v3.5.6',
+  curlImage: 'curlimages/curl:8.16.0',
+  traefik: { name: 'steffen-proxy-traefik', ip4: '172.31.250.2', ip6: 'fd5e:12::2' },
+  insecure: { name: 'steffen-proxy-traefik-inseguro', ip4: '172.31.250.3' },
+  clients: { a: '172.31.250.11', b: '172.31.250.12', c6: 'fd5e:12::13' },
+  secret: 'e2e-proxy-traefik-local-0123456789abcdefghij',
+  diagnosticToken: 'e2e-diagnostico-proxy-local-0123456789abcdef',
+};

@@ -165,3 +165,20 @@ test('todos los rechazos tienen mensaje y ninguno menciona cantidades de stock',
     assert.doesNotMatch(message, /\d/, `${code}: sin números`);
   }
 });
+
+test('entorno local y IP de respaldo: fallan cerrado en Vercel y en un VPS sin proxy de confianza (4B.8)', async () => {
+  const { isLocalEnvironment, clientIpFor } = await import('./client-ip.ts');
+  const none = new Headers({ 'x-forwarded-for': '203.0.113.9', 'x-real-ip': '203.0.113.9' });
+  const local = { NODE_ENV: 'production', NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:55321' };
+  const vps = { NODE_ENV: 'production', NEXT_PUBLIC_SUPABASE_URL: 'https://zzxlghpopmccwsaqbsko.supabase.co' };
+  assert.equal(isLocalEnvironment(local), true);
+  assert.equal(isLocalEnvironment({ NODE_ENV: 'development', NEXT_PUBLIC_SUPABASE_URL: vps.NEXT_PUBLIC_SUPABASE_URL }), true, 'next dev');
+  assert.equal(isLocalEnvironment(vps), false, 'VPS de producción');
+  assert.equal(isLocalEnvironment({ ...local, VERCEL: '1' }), false);
+  assert.equal(isLocalEnvironment({ ...local, VERCEL_ENV: 'preview' }), false);
+  assert.equal(isLocalEnvironment({ NODE_ENV: 'production' }), false, 'sin Supabase configurado');
+  // los encabezados enviados por el cliente nunca se usan sin un proxy de confianza
+  assert.equal(clientIpFor(none, local), '127.0.0.1');
+  assert.equal(clientIpFor(none, vps), null, 'VPS: sin IP compartida para todos');
+  assert.equal(clientIpFor(new Headers({ 'x-real-ip': '198.51.100.7' }), { ...vps, VERCEL: '1' }), '198.51.100.7');
+});

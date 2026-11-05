@@ -135,6 +135,40 @@ export default function OrderStatus({ code }: { code: string | null }) {
         </section>
       )}
 
+      {/* Despacho registrado a mano en el panel (consultar_pedido ya lo devuelve; ver «Envíos y entregas»). */}
+      {order.dispatch && (order.dispatch.carrier || order.dispatch.tracking || order.dispatch.dispatchedAt) && (
+        <section className="ck-card" aria-labelledby="ck-dispatch-title" data-testid="order-dispatch">
+          <h2 id="ck-dispatch-title">Despacho</h2>
+          <dl className="ck-totals">
+            {order.dispatch.carrier && (
+              <div>
+                <dt>Transportista</dt>
+                <dd data-testid="order-carrier">{order.dispatch.carrier}</dd>
+              </div>
+            )}
+            {order.dispatch.tracking && (
+              <div>
+                <dt>Código de seguimiento</dt>
+                <dd data-testid="order-tracking">{order.dispatch.tracking}</dd>
+              </div>
+            )}
+            {order.dispatch.dispatchedAt && (
+              <div>
+                <dt>Despachado</dt>
+                <dd>{dateFormat.format(new Date(order.dispatch.dispatchedAt))}</dd>
+              </div>
+            )}
+            {order.dispatch.deliveredAt && (
+              <div>
+                <dt>Entregado</dt>
+                <dd>{dateFormat.format(new Date(order.dispatch.deliveredAt))}</dd>
+              </div>
+            )}
+          </dl>
+          {order.dispatch.carrier && !order.dispatch.tracking && <p className="ck-hint">El código de seguimiento se informa cuando el transportista lo asigna.</p>}
+        </section>
+      )}
+
       <section className="ck-card" aria-labelledby="ck-items-title">
         <h2 id="ck-items-title">Productos</h2>
         <ul className="ck-lines">

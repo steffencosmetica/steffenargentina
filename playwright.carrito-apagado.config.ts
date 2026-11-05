@@ -10,6 +10,8 @@ const PORT = 3101;
 export default defineConfig({
   testDir: './e2e',
   testMatch: /carrito-apagado\.spec\.ts$/,
+  // carpeta propia: no borra los artefactos de fallos de la suite principal (test-results)
+  outputDir: 'test-results-apagado',
   fullyParallel: false,
   workers: 1,
   retries: 0,

@@ -75,13 +75,13 @@ test('la contraseña SMTP y el token del monitor solo se leen en módulos de ser
   const health = sources.filter(({ text }) => /process\.env\.MAIL_HEALTH_TOKEN/.test(text)).map(({ path }) => norm(path));
   assert.deepEqual(health, ['src/app/api/interno/comunicaciones/route.ts']);
   for (const { path, text } of sources.filter(({ text }) => /^\s*['"]use client['"]/m.test(text))) {
-    assert.doesNotMatch(text, /MAIL_|SMTP|nodemailer|@\/lib\/mail\/|@\/lib\/legal\/api/, path);
+    assert.doesNotMatch(text, /MAIL_|SMTP|nodemailer|@\/lib\/mail\/|@\/lib\/legal\/api|STEFFEN_PROXY|orders\/client-ip/, path);
   }
 });
 
 test('.env.example no trae contraseñas de correo ni tokens', () => {
   const example = readFileSync(join(ROOT, '.env.example'), 'utf8');
-  for (const name of ['MAIL_SMTP_PASSWORD', 'MAIL_HEALTH_TOKEN']) {
+  for (const name of ['MAIL_SMTP_PASSWORD', 'MAIL_HEALTH_TOKEN', 'STEFFEN_PROXY_SECRET', 'STEFFEN_PROXY_DIAGNOSTIC_TOKEN']) {
     const line = example.split(/\r?\n/).find((l) => l.replace(/^#\s*/, '').startsWith(`${name}=`));
     assert.ok(line, `${name} documentada`);
     assert.match(line!.replace(/^#\s*/, ''), new RegExp(`^${name}=$`), `${name} sin valor`);

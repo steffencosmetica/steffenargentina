@@ -15,7 +15,8 @@
     "db:test": "supabase test db",
     "test:concurrency": "node --test --test-concurrency=1 supabase/tests/concurrency/pedidos.concurrency.test.ts supabase/tests/concurrency/arrepentimiento.concurrency.test.ts",
     "db:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts",
-    "mail:worker": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/mail-worker.ts"
+    "mail:worker": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/mail-worker.ts",
+    "test:e2e:proxy": "playwright test --config playwright.proxy.config.ts"
   },
   "engines": {
     "node": ">=20.9.0"

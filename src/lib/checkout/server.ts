@@ -1,9 +1,10 @@
 import 'server-only';
 import { headers } from 'next/headers';
-import { isCartEnabled, quoteCart } from '@/lib/cart/server';
+import { quoteCart } from '@/lib/cart/server';
+import { checkoutAvailableFor } from './availability';
 import type { CartItem } from '@/lib/cart/types';
 import { centavosToDecimal } from '@/lib/money';
-import { LOCAL_DEV_IP, trustedClientIp, trustedProxyFromEnv } from '@/lib/orders/client-ip';
+import { clientIpFor, isLocalEnvironment } from '@/lib/orders/client-ip';
 import { parseCreateOrderResult, type CreateOrderResult } from '@/lib/orders/errors';
 import { listProvinceCoverage, quoteShipping, type ProvinceCoverage } from '@/lib/shipping/quote';
 import { createServiceClient, hasServiceKey } from '@/lib/supabase/admin';
@@ -18,12 +19,12 @@ import type { CheckoutSummary, ShippingSummary } from './summary';
 // Acá solo se arman las llamadas y se convierten los importes.
 
 /**
- * ¿Están disponibles el checkout y el seguimiento? Mismas condiciones que el carrito (Supabase local y
- * fuera de Vercel, ver src/lib/cart/flag.ts) y además la clave de servidor. En Preview y Production: no
- * (las páginas y rutas responden 404). Comprar además exige store_settings.checkout_enabled en la base.
+ * ¿Están disponibles el checkout y el seguimiento? Carrito habilitado, clave de servidor, páginas legales y
+ * Botón de Arrepentimiento publicados (ver ./availability.ts). En Preview y Production: no (las páginas y
+ * rutas responden 404). Comprar además exige store_settings.checkout_enabled en la base.
  */
 export function isCheckoutAvailable(): boolean {
-  return isCartEnabled() && hasServiceKey();
+  return checkoutAvailableFor(process.env, hasServiceKey());
 }
 
 export async function listProvinces(): Promise<ProvinceCoverage[]> {
@@ -46,22 +47,21 @@ export async function buildSummary(items: CartItem[], provinceCode: string | nul
 
 /**
  * IP del comprador para el antiabuso de crear_pedido(): la del proxy de confianza (Vercel), o la fija de
- * desarrollo fuera de Vercel. Nunca un dato que mande el navegador.
+ * desarrollo SOLO en entorno local (ver isLocalEnvironment). En un VPS sin proxy de confianza: null (falla
+ * cerrado) en lugar de una IP compartida por todos. Nunca un dato que mande el navegador.
  */
 export async function clientIp(): Promise<string | null> {
-  const proxy = trustedProxyFromEnv(process.env);
-  if (proxy === 'none') return process.env.VERCEL ? null : LOCAL_DEV_IP;
-  return trustedClientIp(await headers(), proxy);
+  return clientIpFor(await headers(), process.env);
 }
 
 /**
  * Control antiabuso previo a crear_pedido(): punto de enganche de Turnstile (pendiente de credenciales).
- * Fuera de Vercel (desarrollo y pruebas locales) no hay desafío. En cualquier despliegue falla CERRADO
+ * Solo en entorno local (desarrollo y pruebas) no hay desafío. En cualquier despliegue (Vercel o VPS) falla CERRADO
  * hasta que se implemente la verificación con TURNSTILE_SECRET_KEY. Los límites por IP, por email y de
  * unidades los aplica la base en cada intento, con o sin este control.
  */
 export function humanCheck(): boolean {
-  return !process.env.VERCEL;
+  return isLocalEnvironment(process.env);
 }
 
 export async function createOrder(request: CreateOrderRequest, ip: string): Promise<CreateOrderResult> {

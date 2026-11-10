@@ -51,7 +51,7 @@ test.beforeEach(() => {
   localSql(RESET);
 });
 
-test.afterAll(() => {
+test.afterAll(({}, testInfo) => {
   setLocalCheckout(false);
   localSql(`
 do $$
@@ -64,6 +64,9 @@ begin
 end
 $$`);
   seedBaseCatalog();
+  if (testInfo.project.name.startsWith('pago-')) {
+    localSql("delete from private.payment_request_limits where ip_hash = private.hash_ip('127.0.0.1')");
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -130,6 +133,104 @@ async function waitForOrderPage(page: Page) {
   return code;
 }
 
+async function createPaymentFixture(page: Page) {
+  localSql("delete from private.payment_request_limits where ip_hash = private.hash_ip('127.0.0.1')");
+  await preload(page, [{ productId: STORE.neutro, quantity: 1 }]);
+  await page.goto('/checkout');
+  await fillForm(page);
+  await expect(page.getByTestId('ck-total')).toHaveText('$ 16.050,50');
+  const created = page.waitForResponse((response) => response.url().endsWith('/api/checkout/pedido'));
+  await submit(page).click();
+  const response = await created;
+  expect(response.ok()).toBe(true);
+  const code = await waitForOrderPage(page);
+  const { token } = await response.json();
+  return { code, token };
+}
+
+const payButton = (page: Page) => page.getByRole('button', { name: 'Pagar con Mercado Pago' });
+
+test('redirección y retorno informativo sin segunda reserva @pago-local', async ({ page }, testInfo) => {
+  const { code, token } = await createPaymentFixture(page);
+  const button = payButton(page);
+  await expect(button).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('seguimiento.png'), fullPage: true });
+  const stock = stockOf(STORE.neutro);
+  const request = page.waitForRequest((entry) => entry.url().endsWith('/api/pedido/pago'));
+  await button.click();
+  await expect(page).toHaveURL(new RegExp(`/pedido/${code}\\?pago=simulado$`));
+  expect((await request).headers().referer ?? '').not.toContain(token);
+  expect(page.url()).not.toContain(token);
+  await expect(page.getByText('Llegaste al checkout simulado.', { exact: false })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('checkout-simulado.png'), fullPage: true });
+  for (const status of ['finalizado', 'pendiente', 'rechazado']) {
+    await page.goto(`/pedido/${code}?pago=${status}`);
+    await expect(page.getByTestId('order-payment')).toHaveAttribute('data-status', 'pending');
+  }
+  expect(orders()).toHaveLength(1);
+  expect(stockOf(STORE.neutro)).toBe(stock);
+});
+
+test('dos pestañas, fallo al guardar la order y recuperación al recargar @pago-local', async ({ page, context }) => {
+  const credentials = await createPaymentFixture(page);
+  const { code, token } = credentials;
+  const other = await context.newPage();
+  await other.goto(`/pedido/${code}#t=${token}`);
+  await expect(payButton(other)).toBeVisible();
+  localSql(`
+    create function private.fail_payment_test() returns trigger language plpgsql set search_path = '' as $$
+    begin raise exception 'Fallo de persistencia de prueba'; end $$;
+    create trigger fail_payment_test before update of provider_order_id on private.payment_attempts
+      for each row when (new.provider_order_id is not null) execute function private.fail_payment_test();
+  `);
+  try {
+    const responses = await Promise.all([page, other].map(async (tab) => {
+      const response = tab.waitForResponse((entry) => entry.url().endsWith('/api/pedido/pago'));
+      await payButton(tab).click();
+      return response;
+    }));
+    expect(responses.map((response) => response.status()).sort()).toEqual([409, 503]);
+  } finally {
+    localSql('drop trigger fail_payment_test on private.payment_attempts; drop function private.fail_payment_test();');
+  }
+  const [remote] = localSql('select id from private.mock_checkout_orders') as { id: string }[];
+  const [initial] = localSql('select idempotency_key from private.payment_attempts') as { idempotency_key: string }[];
+  localSql("update private.payment_attempts set lease_until = clock_timestamp() - interval '1 second'");
+  await other.reload();
+  await payButton(other).click();
+  await expect(other).toHaveURL(/\?pago=simulado$/);
+  expect(localSql('select idempotency_key, provider_order_id from private.payment_attempts')).toEqual([
+    { idempotency_key: initial.idempotency_key, provider_order_id: remote.id },
+  ]);
+  expect(localSql('select id from private.mock_checkout_orders')).toEqual([remote]);
+});
+
+for (const state of ['expired', 'cancelled', 'approved'] as const) {
+  test(`impide iniciar pago para pedido ${state} @pago-local`, async ({ page }) => {
+    const credentials = await createPaymentFixture(page);
+    if (state === 'expired') {
+      localSql(`
+        alter table public.orders disable trigger orders_validar_cambios;
+        update public.orders set reservation_expires_at = now() - interval '1 minute';
+        alter table public.orders enable trigger orders_validar_cambios;
+      `);
+    } else if (state === 'cancelled') {
+      localSql("do $$ begin perform private.liberar_reserva(id, 'cancelled', 'system', null) from public.orders; end $$;");
+    } else {
+      localSql("do $$ begin perform private.aplicar_pago(id, 'e2e-5b-fixture', 'approved', total_ars) from public.orders; end $$;");
+    }
+    await page.reload();
+    await expect(page.getByTestId('order-status')).toBeVisible();
+    await expect(payButton(page)).toHaveCount(0);
+    expect((await page.request.post('/api/pedido/pago', { data: credentials })).status()).toBe(409);
+    const unauthorized = await page.request.post('/api/pedido/pago', { data: { ...credentials, token: 'x'.repeat(43) } });
+    const missing = await page.request.post('/api/pedido/pago', { data: { code: 'STF-0000-2345', token: 'x'.repeat(43) } });
+    expect([unauthorized.status(), missing.status()]).toEqual([404, 404]);
+    expect(await unauthorized.text()).toBe(await missing.text());
+    expect(localSql('select id from private.payment_attempts')).toEqual([]);
+  });
+}
+
 // ---------------------------------------------------------------------------
 // flujo completo
 // ---------------------------------------------------------------------------
@@ -174,6 +275,8 @@ test('compra sin registro: del carrito al pedido, envío con centavos y reserva 
   await expect(page.getByTestId('order-shipping')).toHaveText('$ 3.500,50');
   await expect(page.getByTestId('order-total')).toHaveText('$ 33.600,50');
   await expect(page.getByTestId('order-payment-panel')).toContainText('El pago online todavía no está disponible');
+  await expect(page.getByRole('button', { name: 'Pagar con Mercado Pago' })).toHaveCount(0);
+  expect((await page.request.post('/api/pedido/pago', { data: {} })).status()).toBe(404);
 
   // el carrito NO se vacía por crear un pedido pendiente de pago
   expect(await storedCart(page)).toHaveLength(2);

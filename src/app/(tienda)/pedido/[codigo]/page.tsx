@@ -5,6 +5,7 @@ import { isCheckoutAvailable } from '@/lib/checkout/server';
 import { isOrderCode } from '@/lib/checkout/order-view';
 import StoreHeading from '@/components/tienda/StoreHeading';
 import OrderStatus from '@/components/checkout/OrderStatus';
+import { paymentOrigin } from '@/lib/orders/payment-server';
 
 // /pedido/[codigo] — seguimiento privado. El servidor NO consulta nada acá: la página es la misma para
 // cualquier código (no revela si un pedido existe). El navegador lee el token del fragmento (#t=…, que
@@ -17,19 +18,22 @@ export const metadata: Metadata = {
   referrer: 'no-referrer',
 };
 
-type Props = { params: Promise<{ codigo: string }> };
+type Props = { params: Promise<{ codigo: string }>; searchParams: Promise<{ pago?: string | string[] }> };
 
-export default async function PedidoPage({ params }: Props) {
+export default async function PedidoPage({ params, searchParams }: Props) {
   await connection();
   if (!isCheckoutAvailable()) notFound();
   const { codigo } = await params;
   const code = decodeURIComponent(codigo).toUpperCase();
+  const paymentEnabled = Boolean(paymentOrigin());
+  const { pago } = await searchParams;
+  const paymentReturn = paymentEnabled && (pago === 'simulado' || pago === 'finalizado' || pago === 'pendiente' || pago === 'rechazado') ? pago : null;
 
   return (
     <main className="store ck ck-order-page" id="contenido">
       <StoreHeading kicker="Seguimiento" title="TU PEDIDO" as="h1" />
       {/* un código mal formado se trata igual que uno inexistente, sin consultar */}
-      <OrderStatus code={isOrderCode(code) ? code : null} />
+      <OrderStatus code={isOrderCode(code) ? code : null} paymentEnabled={paymentEnabled} paymentReturn={paymentReturn} />
     </main>
   );
 }

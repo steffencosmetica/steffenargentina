@@ -13,6 +13,7 @@ export default defineConfig({
   // el carrito apagado se prueba con su propio build (playwright.carrito-apagado.config.ts)
   // el arnés de Traefik real necesita su red Docker y su propio build (playwright.proxy.config.ts)
   testIgnore: /(carrito-apagado|proxy-traefik)\.spec\.ts$/,
+  grepInvert: /@pago-local/,
   // los tests comparten la base local: uno a la vez
   fullyParallel: false,
   workers: 1,
@@ -57,6 +58,9 @@ export default defineConfig({
       // páginas legales y Botón de Arrepentimiento: apagados por defecto, encendidos solo en este build local
       STEFFEN_LEGAL_PAGES: '1',
       STEFFEN_REVOCATION_ENABLED: '1',
+      // Incluso con la configuración del simulador, next start tiene que dejarlo apagado.
+      STEFFEN_MP_MODE: 'mock',
+      STEFFEN_MP_LOCAL_ORIGIN: `http://localhost:${PORT}`,
     },
   },
 });

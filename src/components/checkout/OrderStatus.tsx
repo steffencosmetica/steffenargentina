@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { formatArs } from '@/lib/money';
 import { FULFILLMENT_LABEL, PAYMENT_LABEL, TOKEN_FRAGMENT, tokenFromHash, type OrderView } from '@/lib/checkout/order-view';
 import { orderTokenFor, rememberOrderToken } from '@/lib/checkout/browser';
-import { ONLINE_PAYMENTS_ENABLED } from '@/lib/orders/payment';
 
 // Estado de un pedido. El token privado:
 //   - llega en el fragmento del enlace (#t=…), que el navegador nunca envía al servidor, o desde esta misma
@@ -27,9 +26,21 @@ const TZ = 'America/Argentina/Buenos_Aires';
 const dateFormat = new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: TZ });
 const timeFormat = new Intl.DateTimeFormat('es-AR', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: TZ });
 
-export default function OrderStatus({ code }: { code: string | null }) {
+const returnMessages = {
+  simulado: 'Llegaste al checkout simulado. Esta prueba no realiza cobros.',
+  finalizado: 'Volviste del checkout. Consultá el estado del pago en tu pedido.',
+  pendiente: 'El checkout informó un pago pendiente. Consultá el estado en tu pedido.',
+  rechazado: 'El checkout informó que el pago no se completó. Consultá el estado en tu pedido.',
+};
+
+export default function OrderStatus({ code, paymentEnabled, paymentReturn }: {
+  code: string | null;
+  paymentEnabled: boolean;
+  paymentReturn: keyof typeof returnMessages | null;
+}) {
   const [state, setState] = useState<State>({ kind: 'loading' });
   const [copied, setCopied] = useState(false);
+  const [payment, setPayment] = useState<'idle' | 'loading' | 'retry' | 'unavailable'>('idle');
 
   useEffect(() => {
     const fromHash = tokenFromHash(window.location.hash);
@@ -95,10 +106,34 @@ export default function OrderStatus({ code }: { code: string | null }) {
 
   const { order, token } = state;
   const pending = order.paymentStatus === 'pending';
+  const canPay = paymentEnabled && pending && !order.needsAttention && !!order.reservationExpiresAt
+    && Date.parse(order.reservationExpiresAt) > Date.now() && payment !== 'unavailable';
   const privateLink = `${window.location.origin}/pedido/${order.code}#${TOKEN_FRAGMENT}=${token}`;
+
+  async function pay() {
+    setPayment('loading');
+    try {
+      const response = await fetch('/api/pedido/pago', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: order.code, token }),
+        cache: 'no-store',
+        referrerPolicy: 'no-referrer',
+      });
+      const result = await response.json();
+      if (response.ok && typeof result.checkoutUrl === 'string') {
+        window.location.assign(result.checkoutUrl);
+        return;
+      }
+      setPayment(result.error === 'payment_unavailable' ? 'unavailable' : 'retry');
+    } catch {
+      setPayment('retry');
+    }
+  }
 
   return (
     <div className="ck-order" data-testid="order-status">
+      {paymentReturn && <p className="ck-banner" role="status">{returnMessages[paymentReturn]}</p>}
       <section className="ck-card ck-order-head" aria-labelledby="ck-order-code">
         <p className="ck-kicker">Pedido</p>
         <h2 id="ck-order-code" className="ck-order-code" data-testid="order-code">
@@ -125,12 +160,17 @@ export default function OrderStatus({ code }: { code: string | null }) {
       {pending && (
         <section className="ck-card ck-pay" aria-labelledby="ck-pay-title" data-testid="order-payment-panel">
           <h2 id="ck-pay-title">Pago</h2>
-          {ONLINE_PAYMENTS_ENABLED ? null : (
+          {canPay ? (
+            <button type="button" className="store-btn" disabled={payment === 'loading'} onClick={pay}>
+              {payment === 'loading' ? 'Abriendo Mercado Pago…' : 'Pagar con Mercado Pago'}
+            </button>
+          ) : (
             <p>
               El pago online todavía no está disponible.
               {order.reservationExpiresAt && ` Reservamos tus productos hasta las ${timeFormat.format(new Date(order.reservationExpiresAt))} (hora de Argentina).`}
             </p>
           )}
+          {payment === 'retry' && <p role="alert">No pudimos abrir el pago. Volvé a intentarlo en unos segundos.</p>}
           <p className="ck-hint">Tu carrito sigue guardado en este dispositivo hasta que el pago se confirme.</p>
         </section>
       )}

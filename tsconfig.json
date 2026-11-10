@@ -40,7 +40,9 @@
     ".next-e2e-off/types/**/*.ts",
     ".next-e2e-off/dev/types/**/*.ts",
     ".next-e2e-proxy/types/**/*.ts",
-    ".next-e2e-proxy/dev/types/**/*.ts"
+    ".next-e2e-proxy/dev/types/**/*.ts",
+    ".next-e2e-pago-local/types/**/*.ts",
+    ".next-e2e-pago-local/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

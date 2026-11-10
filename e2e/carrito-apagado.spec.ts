@@ -34,6 +34,7 @@ test('el checkout y el seguimiento no existen (aunque esté la clave de servidor
     request.post('/api/checkout/resumen', { data: { items: [item], provinceCode: 'AR-B' } }),
     request.post('/api/checkout/pedido', { data: { idempotencyKey: 'x'.repeat(43), form: {}, items: [item], expectedTotalCentavos: 100, acceptTerms: true } }),
     request.post('/api/pedido/consultar', { data: { code: 'STF-2611-ABCD', token: 'a'.repeat(43) } }),
+    request.post('/api/pedido/pago', { data: { code: 'STF-2611-ABCD', token: 'a'.repeat(43) } }),
   ];
   for (const response of await Promise.all(calls)) expect(response.status(), response.url()).toBe(404);
 });

@@ -339,6 +339,16 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
+            iniciar_intento_pago: { Args: { p_code: string; p_token: string; p_client_ip: string }; Returns: Json };
+            finalizar_intento_pago: {
+              Args: { p_id: string; p_lease: string; p_provider_order_id: string | null; p_error: string | null };
+              Returns: boolean;
+            };
+            simular_order_pago: { Args: { p_key: string; p_lease: string; p_reference: string; p_total: string }; Returns: string | null };
+            buscar_order_pago_simulada: {
+              Args: { p_id: string | null; p_reference: string | null; p_begin: string | null; p_end: string | null };
+              Returns: Json;
+            };
             "admin_actualizar_limites":
 { Args: { "p_max_attempts_per_ip_hour": number,"p_max_orders_per_ip_hour": number,"p_max_pending_orders_per_email": number,"p_max_units_per_order": number,"p_max_units_per_product": number,"p_reservation_minutes": number }; Returns: {
               "checkout_enabled": boolean,

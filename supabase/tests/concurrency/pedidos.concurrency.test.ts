@@ -60,6 +60,47 @@ function sqlstate(r: PsqlResult): string | undefined {
 
 const lit = (s: string) => `'${s.replace(/'/g, "''")}'`;
 
+test('Fase 5B: dos conexiones compiten por el pago y se recupera el mismo intento tras dos interrupciones', async () => {
+  const ip = nextIp();
+  const order = result(await psql(crearSql(newKey('checkout-pro'), `checkout-pro-${RUN}@test.com`, ip, [{ product: 'pago', quantity: 1 }])));
+  assert.equal(order.status, 'created');
+  const claimSql = `select 'RESULT:' || public.iniciar_intento_pago(${lit(order.code)}, ${lit(order.token)}, ${lit(ip)})::text;`;
+  const expireLease = `update private.payment_attempts set lease_until = clock_timestamp() - interval '1 second' where order_id = ${lit(order.order_id)};`;
+  const stockAfterCheckout = await stock('pago');
+  try {
+    const claims = (await simultaneas([claimSql, claimSql])).map(result);
+    assert.deepEqual(claims.map((claim) => claim.status).sort(), ['busy', 'creating']);
+    const first = claims.find((claim) => claim.status === 'creating');
+
+    // Se cortó antes de llamar al proveedor.
+    await sql(expireLease);
+    const retry = result(await psql(claimSql));
+    assert.equal(retry.key, first.key);
+    assert.notEqual(retry.lease, first.lease);
+    const staleCreate = `select public.simular_order_pago(${lit(first.key)}, ${lit(first.lease)}, ${lit(order.code)}, ${lit(retry.total)});`;
+    assert.equal(await sql(staleCreate), '', 'la petición anterior no puede crear una order tras ceder la concesión');
+    const create = `select public.simular_order_pago(${lit(retry.key)}, ${lit(retry.lease)}, ${lit(order.code)}, ${lit(retry.total)});`;
+    const providerId = await sql(create);
+    assert.match(providerId, /^ORDMOCK/);
+    assert.equal(await sql(create), providerId);
+
+    // La order remota hizo commit, pero el proceso no pudo guardar su respuesta.
+    await sql(expireLease);
+    const recovery = result(await psql(claimSql));
+    assert.equal(recovery.key, first.key);
+    const found = JSON.parse(await sql(`select public.buscar_order_pago_simulada(null, ${lit(order.code)},
+      clock_timestamp() - interval '1 minute', clock_timestamp())::text;`));
+    assert.deepEqual(found.map(({ id }: { id: string }) => id), [providerId]);
+    const finish = (lease: string) => `select public.finalizar_intento_pago(${lit(first.id)}, ${lit(lease)}, ${lit(providerId)}, null);`;
+    assert.equal(await sql(finish(retry.lease)), 'f');
+    assert.equal(await sql(finish(recovery.lease)), 't');
+    assert.equal(result(await psql(claimSql)).provider_order_id, providerId);
+    assert.equal(await stock('pago'), stockAfterCheckout);
+  } finally {
+    await sql(`delete from private.payment_request_limits where ip_hash = private.hash_ip(${lit(ip)});`);
+  }
+});
+
 /**
  * Lanza las sesiones y las libera a la vez. Devuelve el resultado de cada una.
  * El controlador toma el lock exclusivo, espera a que las N sesiones estén encoladas (pg_locks) y lo suelta.

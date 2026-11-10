@@ -7,6 +7,7 @@ public/img/*.mov
 /.next-e2e/
 /.next-e2e-off/
 /.next-e2e-proxy/
+/.next-e2e-pago-local/
 /out/
 next-env.d.ts
 *.tsbuildinfo
@@ -24,6 +25,7 @@ npm-debug.log*
 /test-results/
 /test-results-apagado/
 /test-results-proxy/
+/test-results-pago-local/
 /playwright-report/
 /e2e/.auth/
 

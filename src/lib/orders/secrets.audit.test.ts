@@ -40,7 +40,7 @@ test('los componentes de cliente no leen secretos ni importan módulos de servid
     }
     assert.doesNotMatch(
       text,
-      /from ['"](@\/lib\/orders\/(client-ip|payment-server|payment-provider)|@\/lib\/supabase\/admin|@\/lib\/checkout\/server|@\/lib\/cart\/server|@\/lib\/http\/json-api)['"]|from ['"]node:/,
+      /from ['"](@\/lib\/orders\/(client-ip|payment-server|payment-provider|payment-webhook|payment-reconciliation)|@\/lib\/supabase\/admin|@\/lib\/checkout\/server|@\/lib\/cart\/server|@\/lib\/http\/json-api)['"]|from ['"]node:/,
       `${path} importa código de servidor`,
     );
     assert.doesNotMatch(text, /sb_secret_|service_role/i, `${path} menciona una clave de servidor`);

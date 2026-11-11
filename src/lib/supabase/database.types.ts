@@ -339,6 +339,13 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
+            recibir_notificacion_pago: { Args: { p_request: string; p_notification: string; p_provider: string; p_event: string }; Returns: boolean };
+            tomar_trabajos_pago: { Args: never; Returns: Json };
+            resolver_trabajo_pago: {
+              Args: { p_id: string; p_lease: string; p_evidence: Json; p_state: string | null; p_error: string | null; p_retry: boolean };
+              Returns: string;
+            };
+            estado_trabajos_pago: { Args: never; Returns: Json };
             iniciar_intento_pago: { Args: { p_code: string; p_token: string; p_client_ip: string }; Returns: Json };
             finalizar_intento_pago: {
               Args: { p_id: string; p_lease: string; p_provider_order_id: string | null; p_error: string | null };

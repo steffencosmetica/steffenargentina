@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { LOCAL_SUPABASE, SMTP_CANARY, localSecretKey, mailEnv } from './e2e/local';
+import { LOCAL_SUPABASE, SMTP_CANARY, localSecretKey, mailEnv, MOCK_WEBHOOK_FIXTURE } from './e2e/local';
 
 // Pruebas end-to-end del panel /admin.
 // Corren SIEMPRE contra Supabase local (npm run db:start): la app se compila con la URL y la clave
@@ -60,6 +60,8 @@ export default defineConfig({
       STEFFEN_REVOCATION_ENABLED: '1',
       // Incluso con la configuración del simulador, next start tiene que dejarlo apagado.
       STEFFEN_MP_MODE: 'mock',
+      STEFFEN_MP_RECONCILIATION: '1',
+      STEFFEN_MP_MOCK_WEBHOOK_SECRET: MOCK_WEBHOOK_FIXTURE,
       STEFFEN_MP_LOCAL_ORIGIN: `http://localhost:${PORT}`,
     },
   },

@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { LOCAL_SUPABASE, localSecretKey } from './e2e/local';
+import { LOCAL_SUPABASE, localSecretKey, MOCK_WEBHOOK_FIXTURE } from './e2e/local';
 
 const origin = 'http://localhost:3103';
 
@@ -34,6 +34,8 @@ export default defineConfig({
       STEFFEN_REVOCATION_ENABLED: '1',
       STEFFEN_MP_MODE: 'mock',
       STEFFEN_MP_LOCAL_ORIGIN: origin,
+      STEFFEN_MP_RECONCILIATION: '1',
+      STEFFEN_MP_MOCK_WEBHOOK_SECRET: MOCK_WEBHOOK_FIXTURE,
     },
   },
 });

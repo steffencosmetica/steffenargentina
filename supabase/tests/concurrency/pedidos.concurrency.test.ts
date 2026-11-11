@@ -60,6 +60,55 @@ function sqlstate(r: PsqlResult): string | undefined {
 
 const lit = (s: string) => `'${s.replace(/'/g, "''")}'`;
 
+test('Fase 5C: webhook y polling simultáneos, concesión vencida y una sola acreditación', async () => {
+  const ip = nextIp();
+  const order = result(await psql(crearSql(newKey('conciliacion'), `conciliacion-${RUN}@test.com`, ip, [{ product: 'pago', quantity: 1 }])));
+  const claim = JSON.parse(await sql(`select public.iniciar_intento_pago(${lit(order.code)},${lit(order.token)},${lit(ip)})::text`));
+  const remote = await sql(`select public.simular_order_pago(${lit(claim.key)},${lit(claim.lease)},${lit(order.code)},${lit(claim.total)})`);
+  const req = `conc-${RUN}`;
+  const notification = String(BigInt('0x' + RUN) + BigInt(900_000_000_000));
+  const receive = `select 'RESULT:' || to_json(public.recibir_notificacion_pago(${lit(req)},${lit(notification)},${lit(remote)},'order.processed'))::text;`;
+  const take = "select 'RESULT:' || public.tomar_trabajos_pago()::text;";
+  const stockAfterCheckout = await stock('pago');
+  try {
+    await sql(`update private.payment_attempts set lease_until = clock_timestamp() - interval '1 second' where id = ${lit(claim.id)};
+      update private.mock_checkout_orders set status='processed',status_detail='accredited',paid_amount=total_ars,
+        payment_id='PAYMOCK' || replace(gen_random_uuid()::text,'-',''),revision=2 where id=${lit(remote)};`);
+    const received = await simultaneas([receive, receive]);
+    assert.deepEqual(received.map(result), [true, true]);
+    assert.equal(await sql(`select count(*) from private.payment_jobs where request_id=${lit(req)}`), '1');
+    const jobs = (await simultaneas([take, take])).map(result);
+    assert.ok(jobs.every(Boolean));
+    assert.notEqual(jobs[0].id, jobs[1].id);
+    const hook = jobs.find(job => job.provider === remote);
+    const poll = jobs.find(job => job.reference === order.code);
+    assert.ok(hook && poll);
+    await sql(`update private.payment_jobs set lease_until=clock_timestamp()-interval '1 second' where id=${lit(hook.id)}`);
+    const recovered = result(await psql(take));
+    assert.equal(recovered.id, hook.id);
+    assert.notEqual(recovered.lease, hook.lease);
+    const finish = (job: { id: string; lease: string }) =>
+      `select 'RESULT:' || to_json(public.resolver_trabajo_pago(${lit(job.id)},${lit(job.lease)},
+        (public.buscar_order_pago_simulada(${lit(remote)},null,null,null)->0),'accredited',null,false))::text;`;
+    assert.equal(result(await psql(finish(hook))), 'stale');
+    await sql(`alter table public.orders disable trigger orders_validar_cambios;
+      update public.orders set reservation_expires_at=now()-interval '1 second' where id=${lit(order.order_id)};
+      alter table public.orders enable trigger orders_validar_cambios;`);
+    const [webhook, polling, expiry] = await simultaneas([finish(recovered), finish(poll),
+      "select 'RESULT:' || to_json(public.liberar_reservas_vencidas(100))::text;"]);
+    assert.equal(expiry.code, 0, expiry.err);
+    const results = [result(webhook), result(polling)].sort();
+    assert.equal(results[0], 'already_applied');
+    assert.ok(['approved', 'approved_late'].includes(results[1]));
+    assert.equal(await sql(`select count(*) from public.order_events where order_id=${lit(order.order_id)} and event_type in ('payment_approved','payment_approved_late')`), '1');
+    assert.equal(await stock('pago'), stockAfterCheckout);
+  } finally {
+    await sql(`delete from private.payment_jobs where request_id=${lit(req)};
+      delete from public.orders where id=${lit(order.order_id)};
+      delete from private.payment_request_limits where ip_hash=private.hash_ip(${lit(ip)});`);
+  }
+});
+
 test('Fase 5B: dos conexiones compiten por el pago y se recupera el mismo intento tras dos interrupciones', async () => {
   const ip = nextIp();
   const order = result(await psql(crearSql(newKey('checkout-pro'), `checkout-pro-${RUN}@test.com`, ip, [{ product: 'pago', quantity: 1 }])));

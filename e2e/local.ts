@@ -4,6 +4,7 @@ import { join } from 'node:path';
 // Supabase local levantado con `npm run db:start` (puertos de supabase/config.toml).
 // La clave publicable se lee de `supabase status` del stack local en ejecución: no hay claves en el repo.
 let localKey: string | undefined;
+export const MOCK_WEBHOOK_FIXTURE = 'fixture-local-webhook-'.repeat(3);
 
 export const LOCAL_SUPABASE = {
   url: 'http://127.0.0.1:55321',

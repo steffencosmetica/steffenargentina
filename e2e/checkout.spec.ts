@@ -1,6 +1,9 @@
 import { expect, test, type Page, type Request } from '@playwright/test';
+import { createHmac, randomUUID } from 'node:crypto';
+import { createClient } from '@supabase/supabase-js';
+import { reconcilePayment } from '../src/lib/orders/payment-reconciliation';
 import { seedBaseCatalog } from './global-setup';
-import { localSql, setLocalCheckout } from './local';
+import { LOCAL_SUPABASE, localSecretKey, localSql, MOCK_WEBHOOK_FIXTURE, setLocalCheckout } from './local';
 import { seedStore, STORE } from './tienda-data';
 
 // Checkout y seguimiento (Fase 4B.5), con el build local (carrito + clave de servidor) contra Supabase LOCAL.
@@ -65,6 +68,7 @@ end
 $$`);
   seedBaseCatalog();
   if (testInfo.project.name.startsWith('pago-')) {
+    localSql('delete from private.payment_jobs');
     localSql("delete from private.payment_request_limits where ip_hash = private.hash_ip('127.0.0.1')");
   }
 });
@@ -149,6 +153,132 @@ async function createPaymentFixture(page: Page) {
 }
 
 const payButton = (page: Page) => page.getByRole('button', { name: 'Pagar con Mercado Pago' });
+
+async function createFinancialFixture(page: Page) {
+  localSql('delete from private.payment_jobs');
+  const credentials = await createPaymentFixture(page);
+  const response = await page.request.post('/api/pedido/pago', { data: credentials });
+  expect(response.status()).toBe(200);
+  const [remote] = localSql('select id from private.mock_checkout_orders') as { id: string }[];
+  expect(remote.id).toMatch(/^ORDMOCK[0-9a-f]{32}$/);
+  return { ...credentials, id: remote.id };
+}
+
+function signedWebhook(id: string, notification: string, action = 'order.processed') {
+  const request = randomUUID();
+  const ts = String(Date.now());
+  const digest = createHmac('sha256', MOCK_WEBHOOK_FIXTURE).update(`id:${id};request-id:${request};ts:${ts};`).digest('hex');
+  return {
+    path: `/api/mercadopago/webhook?data.id=${id}&type=order`,
+    data: { type: 'order', api_version: 'v1', id: notification, action, live_mode: false, data: { id } },
+    headers: { 'x-request-id': request, 'x-signature': `ts=${ts},v1=${digest}` },
+  };
+}
+
+function reconciliationClient() {
+  return createClient(LOCAL_SUPABASE.url, localSecretKey(), { auth: { persistSession: false } });
+}
+
+test('5C conserva el evento ante replay, ignora el body y confirma por consulta @pago-local', async ({ page }) => {
+  const { id } = await createFinancialFixture(page);
+  const db = reconciliationClient();
+  const first = signedWebhook(id, '50001');
+  expect((await page.request.post(first.path, { data: first.data })).status()).toBe(401);
+  expect((await page.request.post(first.path, { ...first, data: { ...first.data, data: { id: 'manipulado' } } })).status()).toBe(400);
+  expect((await page.request.post(first.path, { ...first, data: { ...first.data, user_id: 'otro-vendedor' } })).status()).toBe(400);
+  const receipts = await Promise.all([page.request.post(first.path, first), page.request.post(first.path, first)]);
+  expect(receipts.map(receipt => receipt.status())).toEqual([200, 200]);
+  expect(localSql('select request_id from private.payment_jobs')).toHaveLength(1);
+  expect((await reconcilePayment(db))?.result).toBe('created');
+  expect(orders()[0].payment).toBe('pending');
+  localSql("update private.payment_jobs set received_at=now()-interval '8 days', attempts=9 where attempt_id is not null");
+  const [poll] = localSql('select public.tomar_trabajos_pago() as job') as { job: { id: string; lease: string } }[];
+  localSql(`select public.resolver_trabajo_pago('${poll.job.id}','${poll.job.lease}',null,null,'provider_unavailable',true)`);
+  expect(localSql("select state,attempts from private.payment_jobs where attempt_id is not null")).toEqual([{ state: 'queued', attempts: 10 }]);
+  expect(localSql("select public.estado_trabajos_pago()->>'degraded_polls' as count")).toEqual([{ count: '1' }]);
+  localSql("update private.payment_jobs set next_at=clock_timestamp() where attempt_id is not null");
+  localSql("update private.mock_checkout_orders set status='action_required',status_detail='waiting_capture',revision=2");
+  const pending = signedWebhook(id, '50002', 'order.action_required');
+  expect((await page.request.post(pending.path, pending)).status()).toBe(200);
+  expect((await reconcilePayment(db))?.result).toBe('pending');
+  expect(localSql("select state,attempts,next_at > clock_timestamp() + interval '10 minutes' as delayed from private.payment_jobs where attempt_id is not null")).toEqual([
+    { state: 'queued', attempts: 0, delayed: true },
+  ]);
+  expect(orders()[0].payment).toBe('pending');
+
+  const before = stockOf(STORE.neutro);
+  localSql("update private.mock_checkout_orders set status='processed',status_detail='accredited',paid_amount=total_ars,revision=3,payment_id='PAYMOCK'||repeat('a',32)");
+  const credited = signedWebhook(id, '50003');
+  expect((await page.request.post(credited.path, credited)).status()).toBe(200);
+  expect((await reconcilePayment(db))?.result).toBe('approved');
+  const oldEvent = signedWebhook(id, '50004', 'order.created');
+  expect((await page.request.post(oldEvent.path, oldEvent)).status()).toBe(200);
+  expect((await reconcilePayment(db))?.result).toBe('already_applied');
+  expect(stockOf(STORE.neutro)).toBe(before);
+  await page.reload();
+  await expect(page.getByTestId('order-payment')).toHaveAttribute('data-status', 'approved');
+  localSql("update private.mock_checkout_orders set revision=4,payment_id='PAYMOCK'||repeat('b',32)");
+  const secondPayment = signedWebhook(id, '50006');
+  expect((await page.request.post(secondPayment.path, secondPayment)).status()).toBe(200);
+  for (let index = 0; index < 4; index++) await reconcilePayment(db);
+  expect(localSql('select resolution_reason from public.orders')).toEqual([{ resolution_reason: 'duplicate_payment' }]);
+  expect(stockOf(STORE.neutro)).toBe(before);
+  for (const [status, detail, expected, notification] of [
+    ['processed', 'partially_refunded', 'partially_refunded', '50007'],
+    ['charged_back', 'in_process', 'disputed', '50008'],
+  ]) {
+    localSql(`update private.mock_checkout_orders set status='${status}',status_detail='${detail}',revision=revision+1`);
+    const later = signedWebhook(id, notification);
+    expect((await page.request.post(later.path, later)).status()).toBe(200);
+    expect((await reconcilePayment(db))?.result).toBe(expected);
+    expect(orders()[0].payment).toBe('approved');
+    expect(stockOf(STORE.neutro)).toBe(before);
+  }
+});
+
+test('5C responde 503 si PostgreSQL no pudo persistir y admite el mismo envío al recuperarse @pago-local', async ({ page }) => {
+  const { id } = await createFinancialFixture(page);
+  const hook = signedWebhook(id, '50005');
+  localSql(`create function private.fail_payment_inbox_test() returns trigger language plpgsql set search_path='' as $$
+    begin raise exception 'Fallo de persistencia de prueba'; end $$;
+    create trigger fail_payment_inbox_test before insert on private.payment_jobs
+      for each row execute function private.fail_payment_inbox_test();`);
+  try {
+    expect((await page.request.post(hook.path, hook)).status()).toBe(503);
+    expect(localSql('select request_id from private.payment_jobs')).toHaveLength(0);
+  } finally {
+    localSql('drop trigger fail_payment_inbox_test on private.payment_jobs; drop function private.fail_payment_inbox_test();');
+  }
+  expect((await page.request.post(hook.path, hook)).status()).toBe(200);
+});
+
+for (const scenario of ['late', 'shortage', 'cancelled'] as const) {
+  test(`5C conciliación autónoma de acreditación ${scenario} @pago-local`, async ({ page }) => {
+    await createFinancialFixture(page);
+    if (scenario === 'cancelled') {
+      localSql("do $$ begin perform private.liberar_reserva(id,'cancelled','system',null) from public.orders; end $$;");
+    } else {
+      localSql(`alter table public.orders disable trigger orders_validar_cambios;
+        update public.orders set reservation_expires_at=now()-interval '1 minute';
+        alter table public.orders enable trigger orders_validar_cambios;
+        do $$ begin perform public.liberar_reservas_vencidas(10); end $$;`);
+      if (scenario === 'shortage') localSql(`update public.products set stock=0 where id='${STORE.neutro}'`);
+    }
+    localSql("update private.mock_checkout_orders set status='processed',status_detail='accredited',paid_amount=total_ars,revision=2,payment_id='PAYMOCK'||repeat('c',32)");
+    const result = await reconcilePayment(reconciliationClient());
+    expect(result?.result).toBe({ late: 'approved_late', shortage: 'approved_shortage', cancelled: 'cancelled_order_paid' }[scenario]);
+    expect(orders()[0]).toMatchObject({
+      payment: scenario === 'cancelled' ? 'cancelled' : 'approved',
+      stock_state: { late: 'consumed', shortage: 'shortage', cancelled: 'released' }[scenario],
+    });
+    if (scenario === 'shortage') {
+      expect(stockOf(STORE.neutro)).toBe(0);
+      expect(localSql('select resolution_status, resolution_reason from public.orders')).toEqual([
+        { resolution_status: 'pending', resolution_reason: 'stock_shortage' },
+      ]);
+    }
+  });
+}
 
 test('redirección y retorno informativo sin segunda reserva @pago-local', async ({ page }, testInfo) => {
   const { code, token } = await createPaymentFixture(page);
@@ -277,6 +407,7 @@ test('compra sin registro: del carrito al pedido, envío con centavos y reserva 
   await expect(page.getByTestId('order-payment-panel')).toContainText('El pago online todavía no está disponible');
   await expect(page.getByRole('button', { name: 'Pagar con Mercado Pago' })).toHaveCount(0);
   expect((await page.request.post('/api/pedido/pago', { data: {} })).status()).toBe(404);
+  expect((await page.request.post('/api/mercadopago/webhook', { data: {} })).status()).toBe(404);
 
   // el carrito NO se vacía por crear un pedido pendiente de pago
   expect(await storedCart(page)).toHaveLength(2);

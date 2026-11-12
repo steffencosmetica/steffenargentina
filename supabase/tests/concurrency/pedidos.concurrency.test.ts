@@ -60,6 +60,57 @@ function sqlstate(r: PsqlResult): string | undefined {
 
 const lit = (s: string) => `'${s.replace(/'/g, "''")}'`;
 
+test('Fase 5D: administradores concurrentes, fencing y conciliación contra respuesta perdida', async () => {
+  const ip = nextIp();
+  const order = result(await psql(crearSql(newKey('posventa'), `posventa-${RUN}@test.com`, ip, [{ product: 'pago', quantity: 1 }])));
+  const claim = JSON.parse(await sql(`select public.iniciar_intento_pago(${lit(order.code)},${lit(order.token)},${lit(ip)})`));
+  const remote = await sql(`select public.simular_order_pago(${lit(claim.key)},${lit(claim.lease)},${lit(order.code)},${lit(claim.total)})`);
+  const admin = `set role authenticated; set request.jwt.claim.sub='${ADMIN_ID}';`;
+  const secondAdmin = 'cc000000-0000-0000-0000-0000000000a2';
+  try {
+    await sql(`insert into auth.users(id,email) values('${secondAdmin}','posventa-admin-2@test.local');
+      insert into public.admin_users(user_id) values('${secondAdmin}');`);
+    await sql(`select public.finalizar_intento_pago(${lit(claim.id)},${lit(claim.lease)},${lit(remote)},null);
+      update private.mock_checkout_orders set status='processed',status_detail='accredited',paid_amount=total_ars,
+        payment_id='PAYMOCK'||replace(gen_random_uuid()::text,'-','') where id=${lit(remote)};
+      select private.aplicar_pago(${lit(order.order_id)},'local:'||(select payment_id from private.mock_checkout_orders where id=${lit(remote)}),'approved',${claim.total});`);
+    const stockBefore = await stock('pago');
+    const key = await sql('select gen_random_uuid()');
+    const request = `${admin} select 'RESULT:'||to_json(public.admin_solicitar_reembolso(${lit(order.order_id)},${lit(key)},'full',null,null,0,'Motivo de prueba',true,true))::text`;
+    const requests = (await simultaneas([request, request])).map(result);
+    assert.equal(requests[0],requests[1]);
+    const id = requests[0];
+    assert.ok(id);
+    const take = `${admin} select 'RESULT:'||public.admin_tomar_reembolso(${lit(order.order_id)},${lit(id)},true)::text`;
+    const claims = (await simultaneas([take,take.replace(ADMIN_ID,secondAdmin)])).map(result);
+    assert.equal(claims.filter(c=>c.lease).length,1);
+    const old = claims.find(c=>c.lease);
+    await sql(`update private.refund_requests set lease_until=clock_timestamp()-interval '1 second' where id=${lit(id)}`);
+    const renewed = result(await psql(take));
+    assert.equal(renewed.key,old.key);
+    assert.notEqual(renewed.lease,old.lease);
+    const send = (c: any) => `select 'RESULT:'||to_json(public.simular_reembolso_posventa(${lit(id)},${lit(c.key)},${lit(c.lease)},null))::text`;
+    const responses = (await simultaneas([send(old),send(renewed),send(renewed)])).map(result);
+    assert.equal(responses[0],'stale');
+    assert.deepEqual(responses.slice(1),['confirmed','confirmed']);
+    await sql(`update private.after_sales_polls set next_at=clock_timestamp() where order_id=${lit(order.order_id)}`);
+    const polls = (await simultaneas(["select 'RESULT:'||coalesce(public.tomar_posventa_simulada()::text,'null')",
+      "select 'RESULT:'||coalesce(public.tomar_posventa_simulada()::text,'null')"])).map(result);
+    assert.equal(polls.filter(Boolean).length,1);
+    const poll = polls.find(Boolean);
+    const finish = `select public.resolver_reembolso_posventa(${lit(id)},${lit(renewed.lease)},null)`;
+    const observe = `select public.resolver_posventa_simulada(${lit(poll.order)},${lit(poll.lease)})`;
+    const outcomes = await simultaneas([finish,observe]);
+    assert.ok(outcomes.every(r=>r.code===0),JSON.stringify(outcomes));
+    assert.equal(await sql(`select count(*) from private.mock_refunds where provider_order_id=${lit(remote)}`),'1');
+    assert.equal(await sql(`select count(*) from private.observed_refunds where order_id=${lit(order.order_id)}`),'1');
+    assert.equal(await stock('pago'),stockBefore);
+  } finally {
+    await sql(`delete from public.orders where id=${lit(order.order_id)}; delete from private.mock_checkout_orders where id=${lit(remote)}`);
+    await sql(`delete from public.admin_users where user_id='${secondAdmin}'; delete from auth.users where id='${secondAdmin}'`);
+  }
+});
+
 test('Fase 5C: webhook y polling simultáneos, concesión vencida y una sola acreditación', async () => {
   const ip = nextIp();
   const order = result(await psql(crearSql(newKey('conciliacion'), `conciliacion-${RUN}@test.com`, ip, [{ product: 'pago', quantity: 1 }])));

@@ -1,5 +1,20 @@
 import { expect, test } from '@playwright/test';
 import { IDS } from './global-setup';
+import { readFileSync } from 'node:fs';
+import { ADMIN, localSql } from './local';
+import { loginAsAdmin } from './helpers';
+
+test('posventa apagada en producción incluso con flags mock configurados', async ({page})=>{
+  const cleanup = "delete from public.orders where id::text like 'bb600000-%'; delete from public.products where id::text like 'bb600000-%'; delete from public.categories where id::text like 'bb600000-%';";
+  localSql(`do $$ begin ${cleanup} ${readFileSync('supabase/tests/fixtures/admin-pedidos.inc','utf8')} end $$`);
+  try {
+    await loginAsAdmin(page,ADMIN.email,ADMIN.password);
+    await page.goto('/admin/pedidos/bb600000-0000-4000-8000-000000000026');
+    await expect(page.getByRole('heading',{name:'Comprador',exact:true})).toBeVisible();
+    await expect(page.getByRole('region',{name:'Posventa simulada'})).toHaveCount(0);
+    await expect(page.getByRole('button',{name:/Enviar reintegro|Pagar con Mercado Pago/})).toHaveCount(0);
+  } finally { localSql(`do $$ begin ${cleanup} end $$`); }
+});
 
 // Con el carrito apagado (build sin STEFFEN_CART_ENABLED=1) el sitio queda como antes de la Fase 4B.4.
 

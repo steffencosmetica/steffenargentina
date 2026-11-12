@@ -339,6 +339,23 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
+            tomar_posventa_simulada: { Args: Record<PropertyKey, never>; Returns: Json };
+            resolver_posventa_simulada: { Args: { p_order: string; p_lease: string }; Returns: string };
+            estado_posventa_simulada: { Args: Record<PropertyKey, never>; Returns: Json };
+            admin_solicitar_reembolso: {
+              Args: { p_order: string; p_key: string; p_kind: string; p_payment: string | null; p_cents: number | null;
+                p_expected: number; p_reason: string; p_confirm: boolean; p_contact: boolean }; Returns: string;
+            };
+            admin_tomar_reembolso: { Args: { p_order: string; p_id: string; p_confirm: boolean }; Returns: Json };
+            simular_reembolso_posventa: { Args: { p_id: string; p_key: string; p_lease: string; p_payload: Json }; Returns: string };
+            resolver_reembolso_posventa: { Args: { p_id: string; p_lease: string; p_error: string | null }; Returns: string };
+            admin_devolucion_fisica: {
+              Args: { p_order: string; p_id: string; p_item: string | null; p_action: string; p_quantity: number | null;
+                p_reason: string | null; p_suitable: number | null; p_condition: string | null; p_notes: string | null }; Returns: string;
+            };
+            admin_nota_contracargo: { Args: { p_order: string; p_case: string; p_note: string; p_reference: string | null }; Returns: undefined };
+            admin_ver_posventa: { Args: { p_order: string }; Returns: Json };
+            admin_disputas_abiertas: { Args: never; Returns: Json };
             recibir_notificacion_pago: { Args: { p_request: string; p_notification: string; p_provider: string; p_event: string }; Returns: boolean };
             tomar_trabajos_pago: { Args: never; Returns: Json };
             resolver_trabajo_pago: {

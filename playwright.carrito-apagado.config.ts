@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { LOCAL_SUPABASE, localSecretKey } from './e2e/local';
+import { LOCAL_SUPABASE, localSecretKey, MOCK_WEBHOOK_FIXTURE } from './e2e/local';
 
 // Build aparte SIN STEFFEN_CART_ENABLED: verifica que el carrito no aparece en ninguna página pública y
 // que la ruta de cotización responde 404. Usa Supabase local, otra carpeta de build y otro puerto.
@@ -34,6 +34,11 @@ export default defineConfig({
       // páginas legales y arrepentimiento explícitamente apagados (comportamiento por defecto en producción)
       STEFFEN_LEGAL_PAGES: '0',
       STEFFEN_REVOCATION_ENABLED: '0',
+      // Canario: ni siquiera estos flags pueden habilitar posventa en next start.
+      STEFFEN_MP_MODE: 'mock',
+      STEFFEN_MP_RECONCILIATION: '1',
+      STEFFEN_MP_AFTER_SALES: '1',
+      STEFFEN_MP_MOCK_WEBHOOK_SECRET: MOCK_WEBHOOK_FIXTURE,
       // con la clave de servidor presente: el checkout tiene que quedar oculto por el interruptor, no por falta de clave
       SUPABASE_SECRET_KEY: localSecretKey(),
     },

@@ -5,6 +5,8 @@ import { listOrders } from '@/lib/orders/admin';
 import { dateTime, filtersFrom, fulfillmentLabels, PAGE_SIZE, pageNumber, paymentLabels, resolutionLabels } from '@/lib/orders/admin-model';
 import { formatArs, parseCentavos } from '@/lib/money';
 import { filterOrdersAction } from './actions';
+import { readOpenDisputes } from '@/lib/orders/after-sales';
+import { documentationLabels } from '@/lib/orders/after-sales-model';
 
 export const metadata = { title: 'Pedidos' };
 export default async function OrdersPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
@@ -13,11 +15,20 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
   try { saved = JSON.parse((await cookies()).get('admin-order-filters')?.value ?? '{}'); } catch { /* filtros vacíos */ }
   const filters = filtersFrom(saved);
   const page = pageNumber((await searchParams).page);
-  const result = await listOrders(filters, page);
+  const [result, disputes] = await Promise.all([listOrders(filters, page), readOpenDisputes()]);
   const pages = Math.max(1, Math.ceil(result.count / PAGE_SIZE));
   return <>
     <div className="adm-page-header"><div><h1>Pedidos</h1><p>Consultá y gestioná la preparación de los pedidos.</p></div></div>
     <div className="adm-order-stats adm-block"><div className="adm-card adm-card-body"><strong>{result.to_prepare}</strong> pagados por preparar</div><div className="adm-card adm-card-body"><strong>{result.to_resolve}</strong> pendientes de resolución</div></div>
+    {disputes.length > 0 && <section className="adm-card adm-card-body adm-block">
+      <h2>Contracargos abiertos</h2><ul>{disputes.map(dispute => {
+        const deadline = dispute.deadline ? Date.parse(dispute.deadline) : null;
+        const remaining = deadline === null ? null : deadline - Date.now();
+        return <li key={dispute.id}><Link href={`/admin/pedidos/${dispute.order_id}`}>{dispute.code}</Link> · {formatArs(dispute.cents)}
+          {' · '}{documentationLabels[dispute.documentation]} · {dateTime(dispute.deadline)}
+          {remaining !== null && remaining < 48 * 60 * 60 * 1000 && <strong> · {remaining < 0 ? 'Plazo vencido' : 'Vence en menos de 48 horas'}</strong>}</li>;
+      })}</ul>
+    </section>}
     <form action={filterOrdersAction} className="adm-card adm-card-body adm-order-filters adm-block">
       <label>Buscar por código, nombre o email<input className="adm-input" name="q" maxLength={120} defaultValue={filters.q} /></label>
       {([['payment', 'Pago', paymentLabels], ['fulfillment', 'Preparación', fulfillmentLabels], ['resolution', 'Resolución', resolutionLabels]] as const).map(([name, label, options]) => <label key={name}>{label}<select aria-label={label} className="adm-input" name={name} defaultValue={filters[name]}><option value="">Todos</option>{Object.entries(options).map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label>)}

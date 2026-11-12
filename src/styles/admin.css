@@ -1260,6 +1260,13 @@ body.adm {
 .adm-order-detail p,.adm-order-detail dd { overflow-wrap:anywhere; white-space:pre-wrap; }
 .adm-order-detail h2 { margin-bottom:16px; }
 .adm-order-detail .adm-input { width:100%; min-width:0; }
+.adm-posventa { min-width:0; overflow-wrap:anywhere; }
+.adm-posventa form { padding:16px 0; border-bottom:1px solid var(--adm-border); }
+.adm-posventa label { display:block; }
+.adm-posventa input:not([type='hidden']):not([type='checkbox']),
+.adm-posventa select,.adm-posventa textarea { display:block; width:100%; min-width:0; max-width:100%; padding:10px; border:1px solid #b9b9b9; border-radius:6px; background:var(--adm-surface,#fff); color:inherit; font:inherit; }
+.adm-posventa textarea { min-height:90px; resize:vertical; }
+.adm-posventa h3 { margin-top:24px; }
 .adm-order-detail .adm-btn { white-space:normal; min-width:0; padding-top:8px; padding-bottom:8px; }
 .adm-order-items,.adm-order-events { padding-left:20px; }
 .adm-order-items li,.adm-order-events li { margin-bottom:20px; }

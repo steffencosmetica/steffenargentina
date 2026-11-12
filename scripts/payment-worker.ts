@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../src/lib/supabase/database.types.ts';
 import { paymentReconciliationEnabled } from '../src/lib/orders/payment-webhook.ts';
 import { reconcilePayment } from '../src/lib/orders/payment-reconciliation.ts';
+import { reconcileAfterSales } from '../src/lib/orders/after-sales-reconciliation.ts';
 
 const env = process.env;
 if (!paymentReconciliationEnabled(env) || !env.SUPABASE_SECRET_KEY) {
@@ -16,8 +17,13 @@ const health = process.argv.includes('--health');
 if (health) {
   const { data, error } = await db.rpc('estado_trabajos_pago').abortSignal(AbortSignal.timeout(4000));
   if (error || !data || typeof data !== 'object' || Array.isArray(data)) process.exit(2);
-  console.log(JSON.stringify(data));
-  process.exit(Object.values(data).some(value => typeof value === 'number' && value > 0) ? 1 : 0);
+  const afterSales = env.STEFFEN_MP_AFTER_SALES === '1'
+    ? await db.rpc('estado_posventa_simulada').abortSignal(AbortSignal.timeout(4000)) : null;
+  if (afterSales?.error) process.exit(2);
+  const result = { ...data, afterSales: afterSales?.data ?? null };
+  console.log(JSON.stringify(result));
+  const alerts = [...Object.values(data), ...(afterSales?.data && typeof afterSales.data === 'object' ? Object.values(afterSales.data) : [])];
+  process.exit(alerts.some(value => typeof value === 'number' && value > 0) ? 1 : 0);
 }
 
 let stopping = false;
@@ -27,7 +33,10 @@ while (!stopping) {
   let count = 0;
   try {
     while (!stopping && count < 20) {
-      const work = await reconcilePayment(db);
+      const payment = await reconcilePayment(db);
+      const afterSales = env.STEFFEN_MP_AFTER_SALES === '1' ? await reconcileAfterSales(db) : null;
+      if (afterSales) console.log(JSON.stringify({ event:'after_sales_observation',...afterSales }));
+      const work = payment ?? afterSales;
       if (!work) break;
       count++;
       console.log(JSON.stringify({ event: 'payment_job', ...work }));

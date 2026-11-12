@@ -5,6 +5,124 @@ import { reconcilePayment } from '../src/lib/orders/payment-reconciliation';
 import { seedBaseCatalog } from './global-setup';
 import { LOCAL_SUPABASE, localSecretKey, localSql, MOCK_WEBHOOK_FIXTURE, setLocalCheckout } from './local';
 import { seedStore, STORE } from './tienda-data';
+import { ADMIN } from './local';
+import { loginAsAdmin } from './helpers';
+import { reconcileAfterSales } from '../src/lib/orders/after-sales-reconciliation';
+
+test('5D respuesta remota confirmada con persistencia caída se recupera sin reenviar @pago-local', async ({page})=>{
+  const {id,code}=await createFinancialFixture(page);
+  localSql("update private.mock_checkout_orders set status='processed',status_detail='accredited',paid_amount=total_ars,revision=2,payment_id='PAYMOCK'||repeat('a',32)");
+  const hook=signedWebhook(id,'59004');
+  expect((await page.request.post(hook.path,hook)).status()).toBe(200);
+  expect((await reconcilePayment(reconciliationClient()))?.result).toBe('approved');
+  const [order]=localSql(`select id from public.orders where code='${code}'`) as {id:string}[];
+  await loginAsAdmin(page,ADMIN.email,ADMIN.password);
+  await page.goto(`/admin/pedidos/${order.id}`);
+  await page.getByLabel('Motivo del reintegro').fill('Reintegro con recuperación de prueba');
+  await page.getByRole('button',{name:'Revisar reintegro'}).click();
+  await page.getByLabel('Confirmo el envío del reintegro simulado.').check();
+  localSql(`create function private.fail_refund_result_test() returns trigger language plpgsql set search_path='' as $$
+    begin if new.state='confirmed' then raise exception 'Fallo de persistencia de prueba'; end if; return new; end $$;
+    create trigger fail_refund_result_test before update on private.refund_requests
+      for each row execute function private.fail_refund_result_test();`);
+  try {
+    await page.getByRole('button',{name:'Enviar reintegro simulado'}).click();
+    await expect(page.getByText('Resultado pendiente de conciliación. Revisá el historial antes de repetir la operación.')).toBeVisible();
+    expect(localSql('select outcome from private.mock_refunds')).toEqual([{outcome:'confirmed'}]);
+    expect(localSql('select state from private.refund_requests')).toEqual([{state:'processing'}]);
+    await expect(page.getByText('Confirmado por Mercado Pago simulado',{exact:true})).toHaveCount(0);
+  } finally {
+    localSql('drop trigger fail_refund_result_test on private.refund_requests; drop function private.fail_refund_result_test();');
+  }
+  expect((await reconcileAfterSales(reconciliationClient()))?.result).toBe('observed');
+  await page.reload();
+  await expect(page.getByText('Confirmado por Mercado Pago simulado',{exact:true})).toHaveCount(1);
+  expect(localSql('select id from private.mock_refunds')).toHaveLength(1);
+  expect(localSql('select id from private.observed_refunds')).toHaveLength(1);
+});
+
+test('5D reintegros parcial y total, confirmación y stock intacto @pago-local', async ({ page }) => {
+  const { id, code } = await createFinancialFixture(page);
+  localSql("update private.mock_checkout_orders set status='processed',status_detail='accredited',paid_amount=total_ars,revision=2,payment_id='PAYMOCK'||repeat('a',32)");
+  const hook = signedWebhook(id,'59001');
+  expect((await page.request.post(hook.path,hook)).status()).toBe(200);
+  expect((await reconcilePayment(reconciliationClient()))?.result).toBe('approved');
+  const stock = stockOf(STORE.neutro);
+  const [order] = localSql(`select id from public.orders where code='${code}'`) as { id: string }[];
+  await loginAsAdmin(page, ADMIN.email, ADMIN.password);
+  await page.goto(`/admin/pedidos/${order.id}`);
+  await expect(page.getByRole('heading',{name:'Posventa simulada'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Enviar reintegro simulado'})).toHaveCount(0);
+  await page.getByLabel('Tipo de reintegro').selectOption('partial');
+  await page.getByLabel('Importe parcial').fill('1000,01');
+  await page.getByLabel('Motivo del reintegro').fill('Reintegro parcial acordado');
+  await page.getByRole('button',{name:'Revisar reintegro'}).click();
+  await expect(page.getByRole('group',{name:'Confirmación de reintegro'})).toContainText('$ 1.000,01');
+  await page.getByLabel('Confirmo el envío del reintegro simulado.').check();
+  await page.getByRole('button',{name:'Enviar reintegro simulado'}).click();
+  await expect(page.getByText('Confirmado por Mercado Pago simulado',{exact:true})).toHaveCount(1);
+  await page.getByLabel('Motivo del reintegro').fill('Reintegro del saldo acordado');
+  await page.getByRole('button',{name:'Revisar reintegro'}).click();
+  await page.getByLabel('Confirmo el envío del reintegro simulado.').check();
+  await page.getByRole('button',{name:'Enviar reintegro simulado'}).click();
+  await expect(page.getByText('Confirmado por Mercado Pago simulado',{exact:true})).toHaveCount(2);
+  expect(stockOf(STORE.neutro)).toBe(stock);
+  expect(localSql('select cents from private.observed_refunds order by cents')).toEqual([{cents:100001},{cents:1505049}]);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.screenshot({path:test.info().outputPath('posventa-reintegros.png'),fullPage:true});
+});
+
+test('5D devolución física, reintegro externo y contracargo visible @pago-local', async ({ page }) => {
+  const { id,code } = await createFinancialFixture(page);
+  localSql("update private.mock_checkout_orders set status='processed',status_detail='accredited',paid_amount=total_ars,revision=2,payment_id='PAYMOCK'||repeat('a',32)");
+  const hook = signedWebhook(id,'59002');
+  expect((await page.request.post(hook.path,hook)).status()).toBe(200);
+  expect((await reconcilePayment(reconciliationClient()))?.result).toBe('approved');
+  const [order] = localSql(`select id from public.orders where code='${code}'`) as {id:string}[];
+  localSql(`do $$ declare v int; begin
+    perform set_config('request.jwt.claim.sub',(select id::text from auth.users where email='admin@steffen.test'),true);
+    select admin_version into v from public.orders where id='${order.id}';
+    perform public.admin_operar_pedido('${order.id}',v,'preparing');
+    select admin_version into v from public.orders where id='${order.id}';
+    perform public.admin_operar_pedido('${order.id}',v,'shipped',null,'Transporte local','ABC',now()); end $$`);
+  const stock = stockOf(STORE.neutro);
+  await loginAsAdmin(page,ADMIN.email,ADMIN.password);
+  await page.goto(`/admin/pedidos/${order.id}`);
+  await page.getByLabel('Cantidad',{exact:true}).fill('1');
+  await page.getByLabel('Motivo de devolución').fill('Producto dañado recibido');
+  await page.getByRole('button',{name:'Registrar devolución',exact:true}).click();
+  await page.getByRole('button',{name:'Marcar coordinada'}).click();
+  await page.getByRole('button',{name:'Registrar recepción'}).click();
+  await page.getByRole('combobox',{name:/Condición/}).selectOption('used');
+  await page.getByLabel('Unidades aptas').fill('0');
+  await page.getByRole('button',{name:'Registrar inspección'}).click();
+  await expect(page.getByText(/Aptas 0 · No aptas 1/)).toBeVisible();
+  await page.getByRole('button',{name:'Resolver devolución'}).click();
+  expect(stockOf(STORE.neutro)).toBe(stock);
+  localSql(`do $$ begin
+    insert into private.mock_refunds(provider_order_id,payment_id,cents,outcome) values('${id}','PAYMOCK'||repeat('a',32),100,'confirmed');
+    insert into private.mock_chargebacks(provider_order_id,payment_id,cents,status,documentation,deadline)
+      values('${id}','PAYMOCK'||repeat('a',32),1605050,'open','pending',now()+interval '1 day');
+    update private.mock_checkout_orders set status='charged_back',status_detail='in_process',revision=3 where id='${id}';
+  end $$`);
+  const chargeback = signedWebhook(id,'59003','order.charged_back');
+  expect((await page.request.post(chargeback.path,chargeback)).status()).toBe(200);
+  expect((await reconcilePayment(reconciliationClient()))?.result).toBe('disputed');
+  await page.reload();
+  await expect(page.getByText(/Reintegro externo confirmado/)).toBeVisible();
+  await expect(page.getByText('Falta documentación',{exact:false})).toBeVisible();
+  await expect(page.getByText('Reintegro y contracargo sobre el mismo pago')).toBeVisible();
+  await expect(page.getByRole('button',{name:'Revisar reintegro'})).toHaveCount(0);
+  await page.getByLabel('Observación del contracargo').fill('Contactar para reunir comprobantes');
+  await page.getByLabel('Referencia interna de evidencia').fill('casos/local/comprobante');
+  await page.getByRole('button',{name:'Guardar observación'}).click();
+  await expect(page.getByText(/Contactar para reunir comprobantes · casos\/local\/comprobante/)).toBeVisible();
+  expect(stockOf(STORE.neutro)).toBe(stock);
+  await page.screenshot({path:test.info().outputPath('posventa-devolucion-contracargo.png'),fullPage:true});
+  await page.goto('/admin/pedidos');
+  await expect(page.getByRole('link',{name:code,exact:true})).toHaveCount(2);
+  await expect(page.getByText(/menos de 48|próxim/)).toBeVisible();
+});
 
 // Checkout y seguimiento (Fase 4B.5), con el build local (carrito + clave de servidor) contra Supabase LOCAL.
 // Las compras se habilitan SOLO en la base local durante este archivo (setLocalCheckout, que corre como

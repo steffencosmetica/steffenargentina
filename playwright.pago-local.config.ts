@@ -35,6 +35,7 @@ export default defineConfig({
       STEFFEN_MP_MODE: 'mock',
       STEFFEN_MP_LOCAL_ORIGIN: origin,
       STEFFEN_MP_RECONCILIATION: '1',
+      STEFFEN_MP_AFTER_SALES: '1',
       STEFFEN_MP_MOCK_WEBHOOK_SECRET: MOCK_WEBHOOK_FIXTURE,
     },
   },

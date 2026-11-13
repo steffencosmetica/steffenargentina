@@ -18,7 +18,8 @@ export const metadata: Metadata = {
   referrer: 'no-referrer',
 };
 
-type Props = { params: Promise<{ codigo: string }>; searchParams: Promise<{ pago?: string | string[] }> };
+import { orderOfficeEnabled } from '@/lib/mail/order-config';
+type Props = { params: Promise<{ codigo: string }>; searchParams: Promise<{ pago?: string | string[]; recuperado?:string }> };
 
 export default async function PedidoPage({ params, searchParams }: Props) {
   await connection();
@@ -26,14 +27,16 @@ export default async function PedidoPage({ params, searchParams }: Props) {
   const { codigo } = await params;
   const code = decodeURIComponent(codigo).toUpperCase();
   const paymentEnabled = Boolean(paymentOrigin());
-  const { pago } = await searchParams;
+  const { pago,recuperado } = await searchParams;
+  const recoveryEnabled=orderOfficeEnabled(process.env);
   const paymentReturn = paymentEnabled && (pago === 'simulado' || pago === 'finalizado' || pago === 'pendiente' || pago === 'rechazado') ? pago : null;
 
   return (
     <main className="store ck ck-order-page" id="contenido">
       <StoreHeading kicker="Seguimiento" title="TU PEDIDO" as="h1" />
       {/* un código mal formado se trata igual que uno inexistente, sin consultar */}
-      <OrderStatus code={isOrderCode(code) ? code : null} paymentEnabled={paymentEnabled} paymentReturn={paymentReturn} />
+      <OrderStatus code={isOrderCode(code) ? code : null} paymentEnabled={paymentEnabled} paymentReturn={paymentReturn}
+       recoveryEnabled={recoveryEnabled} sessionAccess={recoveryEnabled&&recuperado==='1'}/>
     </main>
   );
 }

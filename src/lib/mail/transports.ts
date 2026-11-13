@@ -1,12 +1,13 @@
 // Transportes de correo. Solo el SMTP sale a la red; el de archivo es para desarrollo y pruebas.
-import { mkdir, writeFile, access } from 'node:fs/promises';
+import { mkdir, writeFile, access, link, unlink } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import nodemailer from 'nodemailer';
 import { MailSendError, classifySmtpError } from './errors.ts';
 import { fromDomain, type MailConfig } from './config.ts';
 import type { RenderedMail } from './templates.ts';
 
-export type OutgoingMail = RenderedMail & { id: string; to: string };
+export type OutgoingMail = RenderedMail & { id: string; to: string; idempotent?: boolean; expiresAt?: string };
 export type MailTransport = { name: string; send(mail: OutgoingMail): Promise<{ providerId?: string }> };
 
 function headers(config: Exclude<MailConfig, { transport: 'desactivado' }>, mail: OutgoingMail) {
@@ -39,8 +40,18 @@ export function fileTransport(config: Extract<MailConfig, { transport: 'archivo'
       if (await exists(join(config.captureDir, 'RECHAZO'))) throw new MailSendError('permanente', 'simulado_rechazo', '550 destinatario rechazado (simulado)');
       await mkdir(config.captureDir, { recursive: true });
       const h = headers(config, mail);
-      const file = join(config.captureDir, `${Date.now()}-${mail.id}-${Math.random().toString(36).slice(2, 8)}.json`);
-      await writeFile(file, JSON.stringify({ from: config.from, replyTo: config.replyTo, to: mail.to, subject: mail.subject, text: mail.text, html: mail.html, ...h }, null, 2));
+      if(mail.idempotent && (!mail.expiresAt||!Number.isFinite(Date.parse(mail.expiresAt))||Date.parse(mail.expiresAt)<=Date.now())) throw new MailSendError('temporal','concesion_vencida','La concesión de envío venció');
+      const file = join(config.captureDir, mail.idempotent ? `tienda-${mail.id}.json` : `${Date.now()}-${mail.id}-${Math.random().toString(36).slice(2, 8)}.json`);
+      const content=JSON.stringify({ from: config.from, replyTo: config.replyTo, to: mail.to, subject: mail.subject, text: mail.text, html: mail.html, ...h }, null, 2);
+      if(mail.idempotent){
+        const temporary=join(config.captureDir,`.tienda-${randomUUID()}.tmp`);
+        await writeFile(temporary,content,{flag:'wx'});
+        try {
+          if(Date.parse(mail.expiresAt!)<=Date.now()) throw new MailSendError('temporal','concesion_vencida','La concesión de envío venció');
+          await link(temporary,file);
+        } catch(error){ if((error as {code?:string}).code!=='EEXIST')throw error; }
+        finally { await unlink(temporary); }
+      }else await writeFile(file,content);
       return { providerId: h.messageId };
     },
   };
@@ -63,6 +74,7 @@ export function smtpTransport(config: Extract<MailConfig, { transport: 'smtp' }>
   return {
     name: 'smtp',
     async send(mail) {
+      if(mail.idempotent) throw new MailSendError('permanente','tienda_smtp_bloqueado','Los correos de pedidos solo usan el simulador en esta fase');
       try {
         const info = await transporter.sendMail({
           from: config.from,

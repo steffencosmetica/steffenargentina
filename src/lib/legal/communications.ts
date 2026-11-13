@@ -20,7 +20,7 @@ export type MessageRow = {
 
 export type AdminAction = 'reintento_manual' | 'rebote_manual' | 'resuelto_manual';
 
-export const KIND_LABEL: Record<string, string> = { constancia: 'Constancia por email', recuperacion: 'Enlace de recuperación', alerta: 'Alerta interna' };
+export const KIND_LABEL: Record<string, string> = { constancia: 'Constancia por email', recuperacion: 'Enlace de recuperación', alerta: 'Alerta interna', pedido_recibido:'Pedido recibido',pago_confirmado:'Pago confirmado',pedido_despachado:'Despacho',recuperacion_pedido:'Recuperación del pedido' };
 
 export const STATUS_LABEL: Record<string, string> = {
   pendiente: 'Pendiente',
@@ -58,7 +58,8 @@ export function attentionReason(m: Pick<MessageRow, 'status' | 'next_attempt_at'
 /** Acciones que la base permite (admin_intervenir_comunicacion valida lo mismo). */
 export function allowedActions(m: Pick<MessageRow, 'status' | 'kind'>): AdminAction[] {
   const actions: AdminAction[] = [];
-  if (m.kind !== 'recuperacion' && ['fallido', 'rebotado', 'aceptado', 'resuelto_manual'].includes(m.status)) actions.push('reintento_manual');
+  const tienda=['pedido_recibido','pago_confirmado','pedido_despachado','recuperacion_pedido'].includes(m.kind);
+  if (!['recuperacion','recuperacion_pedido'].includes(m.kind) && !(tienda&&m.status==='aceptado') && ['fallido', 'rebotado', 'aceptado', 'resuelto_manual'].includes(m.status)) actions.push('reintento_manual');
   if (m.status === 'aceptado') actions.push('rebote_manual');
   if (['fallido', 'rebotado', 'pendiente'].includes(m.status)) actions.push('resuelto_manual');
   return actions;

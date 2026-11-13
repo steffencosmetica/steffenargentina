@@ -60,6 +60,37 @@ function sqlstate(r: PsqlResult): string | undefined {
 
 const lit = (s: string) => `'${s.replace(/'/g, "''")}'`;
 
+test('Fase 5E: correos, recuperación e invoice con trabajadores y administradores concurrentes', async()=>{
+ const ip=nextIp(),email=`office-${RUN}@test.com`;
+ const order=result(await psql(crearSql(newKey('office'),email,ip,[{product:'pago',quantity:1}])));
+ assert.equal(order.status,'created');const oid=lit(order.order_id);
+ try{
+  await sql(`update public.revocation_messages set next_attempt_at='-infinity' where order_id=${oid}`);
+  const take=`select 'RESULT:'||coalesce((select row_to_json(c)::text from public.comunicaciones_reclamar_tienda('office-concurrent',1,30) c join public.revocation_messages m on m.id=c.id where m.order_id=${oid}),'null')`;
+  const claims=(await simultaneas([take,take])).map(result);assert.equal(claims.filter(Boolean).length,1);
+  const old=claims.find(Boolean);assert.ok(old.lease_id);
+  await sql(`update public.revocation_messages set locked_until=clock_timestamp()-interval '1 second' where id=${lit(old.id)}`);
+  const renewed=result(await psql(take));assert.equal(renewed.id,old.id);assert.notEqual(renewed.lease_id,old.lease_id);
+  const report=(lease:string)=>`select 'RESULT:'||to_json(public.comunicaciones_resultado(${lit(old.id)},${lit(lease)},'aceptado'))::text`;
+  const reports=(await simultaneas([report(old.lease_id),report(renewed.lease_id)])).map(result);
+  assert.deepEqual(reports,['sin_cambios','aceptado']);
+  assert.equal(await sql(`select count(*) from public.revocation_messages where order_id=${oid} and kind='pedido_recibido'`),'1');
+  const recover=`select 'RESULT:'||public.solicitar_recuperacion_pedido(${lit(order.code)},${lit(email)},${lit(nextIp())})::text`;
+  const requests=(await simultaneas([recover,recover.replace(ip,nextIp())])).map(result);assert.ok(requests.every(r=>r.ok));
+  assert.equal(await sql(`select count(*) from public.revocation_messages where order_id=${oid} and kind='recuperacion_pedido'`),'1');
+  await sql(`update public.revocation_messages set next_attempt_at='-infinity' where order_id=${oid} and kind='recuperacion_pedido'`);
+  const recovery=result(await psql(take));assert.equal(recovery.kind,'recuperacion_pedido');
+  const token=recovery.payload.token;
+  const redeem=(ip:string)=>`select 'RESULT:'||coalesce(public.canjear_recuperacion_pedido(${lit(token)},${lit(ip)})::text,'null')`;
+  const sessions=(await simultaneas([redeem(nextIp()),redeem(nextIp())])).map(result);assert.equal(sessions.filter(Boolean).length,1);
+  const admin=`set role authenticated;set request.jwt.claim.sub='${ADMIN_ID}';`;
+  const invoice=`set timezone to 'America/Argentina/Buenos_Aires';${admin} select public.admin_registrar_factura(${oid},-1,'00001','87654321',current_date,100,'Registro concurrente ficticio',true)`;
+  const invoices=await simultaneas([invoice,invoice]);assert.equal(invoices.filter(r=>r.code===0).length,1);
+  assert.equal(invoices.filter(r=>sqlstate(r)==='55000').length,1);
+  assert.equal(await sql(`select count(*) from private.order_office_events where order_id=${oid} and kind='invoice_registered'`),'1');
+ }finally{await sql(`delete from public.orders where id=${oid}`);}
+});
+
 test('Fase 5D: administradores concurrentes, fencing y conciliación contra respuesta perdida', async () => {
   const ip = nextIp();
   const order = result(await psql(crearSql(newKey('posventa'), `posventa-${RUN}@test.com`, ip, [{ product: 'pago', quantity: 1 }])));

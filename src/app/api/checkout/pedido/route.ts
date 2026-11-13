@@ -3,6 +3,7 @@ import { clientIp, createOrder, humanCheck, isCheckoutAvailable } from '@/lib/ch
 import { formFieldsFromDb, parseCreateOrderRequest, validateForm } from '@/lib/checkout/request';
 import { errorCode, json, notFound, onlyPost, readJsonBody } from '@/lib/http/json-api';
 import { PROVINCE_CODES } from '@/lib/shipping/regions';
+import { scheduleMailDrain } from '@/lib/mail/server';
 
 // POST /api/checkout/pedido — crea el pedido y reserva el stock con public.crear_pedido().
 //
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
     if (result.status === 'rejected') {
       return json({ ...result, fields: formFieldsFromDb(result.fields) }, 409);
     }
+    scheduleMailDrain();
     return json({
       status: result.status,
       code: result.code,

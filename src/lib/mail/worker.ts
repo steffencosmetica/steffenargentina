@@ -12,6 +12,7 @@ export type Outcome = 'aceptado' | 'error_temporal' | 'error_permanente';
 export type MailQueue = {
   claim(worker: string, limit: number): Promise<ClaimedMessage[]>;
   report(id: string, leaseId: string, outcome: Outcome, error?: { code: string; detail: string }, providerId?: string): Promise<string>;
+  validate?(message: ClaimedMessage): Promise<boolean>;
 };
 
 export type DrainSummary = { claimed: number; accepted: number; retry: number; failed: number; unchanged: number; reportErrors: number };
@@ -37,8 +38,11 @@ export async function drainOnce(opts: {
     let error: { code: string; detail: string } | undefined;
     let providerId: string | undefined;
     try {
+      const orderMessage=message.kind.startsWith('pedido_')||message.kind==='pago_confirmado'||message.kind==='recuperacion_pedido'||message.payload._order_message===true;
+      if(orderMessage && (!opts.queue.validate || !await opts.queue.validate(message))) { summary.unchanged++; continue; }
       const rendered = renderMessage(message, opts.context);
-      ({ providerId } = await opts.transport.send({ ...rendered, id: message.id, to: message.recipient }));
+      ({ providerId } = await opts.transport.send({ ...rendered, id: message.id, to: message.recipient,
+        ...(orderMessage?{idempotent:true,expiresAt:String(message.payload._lease_until??'')}: {}) }));
     } catch (e) {
       const failure = e instanceof TemplateError ? new MailSendError('permanente', 'plantilla', e.message) : classifySmtpError(e);
       outcome = failure.kind === 'permanente' ? 'error_permanente' : 'error_temporal';
@@ -62,10 +66,10 @@ export async function drainOnce(opts: {
 
 type Rpc = SupabaseClient<Database>;
 
-export function supabaseQueue(client: Rpc, leaseSeconds = 120): MailQueue {
+export function supabaseQueue(client: Rpc, leaseSeconds = 120, includeOrders = false): MailQueue {
   return {
     async claim(worker, limit) {
-      const { data, error } = await client.rpc('comunicaciones_reclamar', { p_worker: worker, p_limit: limit, p_lease_seconds: leaseSeconds });
+      const { data, error } = await client.rpc(includeOrders?'comunicaciones_reclamar_tienda':'comunicaciones_reclamar', { p_worker: worker, p_limit: limit, p_lease_seconds: leaseSeconds });
       if (error) throw new Error(`reclamar:${error.code ?? 'error'}`);
       return (data ?? []).map((row) => ({
         id: row.id,
@@ -75,6 +79,10 @@ export function supabaseQueue(client: Rpc, leaseSeconds = 120): MailQueue {
         attempt: row.attempt,
         payload: (row.payload ?? {}) as Record<string, unknown>,
       }));
+    },
+    async validate(message) {
+      const {data,error}=await client.rpc('comunicaciones_validar_envio',{p_id:message.id,p_lease:message.leaseId});
+      if(error)throw new Error('validacion_envio');return data===true;
     },
     async report(id, leaseId, outcome, error, providerId) {
       const { data, error: rpcError } = await client.rpc('comunicaciones_resultado', {

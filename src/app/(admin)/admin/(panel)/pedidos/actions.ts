@@ -7,6 +7,8 @@ import { operateOrder } from '@/lib/orders/admin';
 import { changeAfterSales } from '@/lib/orders/after-sales';
 import { filtersFrom } from '@/lib/orders/admin-model';
 import type { ActionState } from '@/lib/admin/action-state';
+import { changeOrderOffice } from '@/lib/orders/office';
+import { scheduleMailDrain } from '@/lib/mail/server';
 
 export async function filterOrdersAction(form: FormData) {
   await requireAdmin();
@@ -19,7 +21,15 @@ export async function orderAction(_previous: ActionState, form: FormData): Promi
   try { await operateOrder(form); }
   catch (error) { return { status: 'error', message: error instanceof Error ? error.message : 'No se pudo guardar el pedido.' }; }
   revalidatePath('/admin/pedidos', 'layout');
+  scheduleMailDrain();
   return { status: 'ok', message: 'Cambios guardados.' };
+}
+
+export async function orderOfficeAction(_previous:ActionState,form:FormData):Promise<ActionState>{
+ await requireAdmin();
+ try{const order=await changeOrderOffice(form);revalidatePath('/admin/pedidos/'+order);scheduleMailDrain();
+  return {status:'ok',message:'Registro guardado. Consultá el estado y el historial actualizados.'};
+ }catch(error){return {status:'error',message:error instanceof Error?error.message:'No se pudo guardar el registro.'};}
 }
 
 export async function afterSalesAction(_previous: ActionState, form: FormData): Promise<ActionState> {

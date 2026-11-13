@@ -19,6 +19,7 @@ import { createTransport } from '../src/lib/mail/transports.ts';
 import { drainOnce, supabaseQueue, type Logger } from '../src/lib/mail/worker.ts';
 import { evaluateHealth, parseStats } from '../src/lib/mail/health.ts';
 import { EMAIL, WHATSAPP_NUMERO } from '../src/lib/site.ts';
+import { orderMailEnabled } from '../src/lib/mail/order-config.ts';
 
 const args = new Set(process.argv.slice(2));
 const log: Logger = (evento, data = {}) => console.log(JSON.stringify({ t: new Date().toISOString(), evento, ...data }));
@@ -49,7 +50,7 @@ const transport = createTransport(config.config)!;
 const context = { linkBaseUrl: config.config.linkBaseUrl, contactEmail: EMAIL, whatsapp: WHATSAPP_NUMERO };
 const worker = (process.env.MAIL_WORKER_ID || `worker-${hostname()}-${process.pid}`).replace(/[^A-Za-z0-9._:-]/g, '-').slice(0, 80);
 const intervalMs = Math.max(5, Math.min(300, Number(process.env.MAIL_WORKER_INTERVAL_SECONDS ?? 30))) * 1000;
-const queue = supabaseQueue(client);
+const queue = supabaseQueue(client,120,orderMailEnabled(process.env));
 
 async function cycle() {
   const summary = await drainOnce({ queue, transport, context, worker, limit: 10, log });

@@ -53,6 +53,7 @@ export default defineConfig({
       SUPABASE_SECRET_KEY: localSecretKey(),
       // correo (Fase 4B.7): transporte a archivos locales, nunca SMTP real (ver e2e/local.ts)
       ...mailEnv(),
+      STEFFEN_ORDER_COMMS: '1',
       // canario: si este valor aparece en los assets públicos, la auditoría del build falla
       MAIL_SMTP_PASSWORD: SMTP_CANARY,
       // páginas legales y Botón de Arrepentimiento: apagados por defecto, encendidos solo en este build local

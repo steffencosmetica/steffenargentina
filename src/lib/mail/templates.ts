@@ -1,10 +1,11 @@
 // Plantillas de los emails transaccionales del arrepentimiento. Sin marketing, seguimiento ni imágenes remotas.
 // La constancia por email es un RESPALDO de la que se muestra en la web: no la reemplaza ni confirma un reembolso.
 
+import { renderOrderMessage } from './order-templates.ts';
 export type ClaimedMessage = {
   id: string;
   leaseId: string;
-  kind: 'constancia' | 'recuperacion' | 'alerta';
+  kind: 'constancia' | 'recuperacion' | 'alerta' | 'pedido_recibido' | 'pago_confirmado' | 'pedido_despachado' | 'recuperacion_pedido';
   recipient: string;
   attempt: number;
   payload: Record<string, unknown>;
@@ -55,6 +56,7 @@ function footer(ctx: TemplateContext): string {
 
 export function renderMessage(message: ClaimedMessage, ctx: TemplateContext): RenderedMail {
   const p = message.payload;
+  if (['pedido_recibido','pago_confirmado','pedido_despachado','recuperacion_pedido'].includes(message.kind)) return renderOrderMessage(message,ctx);
   if (message.kind === 'constancia') {
     const code = str(p.code, CODE, 'codigo');
     const received = formatArgentina(str(p.received_at, /^\d{4}-\d{2}-\d{2}T/, 'fecha'));
@@ -77,7 +79,7 @@ export function renderMessage(message: ClaimedMessage, ctx: TemplateContext): Re
       footer(ctx),
     ], { href, label: 'Ver mis constancias' });
   }
-  const code = typeof p.code === 'string' && CODE.test(p.code) ? p.code : 'sin código';
+  const code = typeof p.code === 'string' && (CODE.test(p.code) || /^STF-\d{4}-[2-9A-HJ-NP-Z]{4}$/.test(p.code)) ? p.code : 'sin código';
   const failedKind = typeof p.failed_kind === 'string' ? p.failed_kind.replace(/[^a-z_]/g, '') : 'comunicación';
   const status = typeof p.failed_status === 'string' ? p.failed_status.replace(/[^a-z_]/g, '') : 'fallido';
   const errorCode = typeof p.error_code === 'string' ? p.error_code.replace(/[^a-z0-9_]/g, '') : 'sin código';

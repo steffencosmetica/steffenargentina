@@ -33,13 +33,17 @@ const returnMessages = {
   rechazado: 'El checkout informó que el pago no se completó. Consultá el estado en tu pedido.',
 };
 
-export default function OrderStatus({ code, paymentEnabled, paymentReturn }: {
+export default function OrderStatus({ code, paymentEnabled, paymentReturn, sessionAccess=false, recoveryEnabled=false }: {
   code: string | null;
   paymentEnabled: boolean;
   paymentReturn: keyof typeof returnMessages | null;
+  sessionAccess?: boolean;
+  recoveryEnabled?: boolean;
 }) {
   const [state, setState] = useState<State>({ kind: 'loading' });
   const [copied, setCopied] = useState(false);
+  const [closing,setClosing]=useState(false);
+  const [closeError,setCloseError]=useState(false);
   const [payment, setPayment] = useState<'idle' | 'loading' | 'retry' | 'unavailable'>('idle');
 
   useEffect(() => {
@@ -54,15 +58,15 @@ export default function OrderStatus({ code, paymentEnabled, paymentReturn }: {
     }
     if (fromHash) rememberOrderToken(code, fromHash);
     const token = fromHash ?? orderTokenFor(code);
-    if (!token) {
+    if (!token && !sessionAccess) {
       setState({ kind: 'missing' });
       return;
     }
     const controller = new AbortController();
-    fetch('/api/pedido/consultar', {
+    fetch(sessionAccess?'/api/pedido/recuperado':'/api/pedido/consultar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, token }),
+      body: JSON.stringify(sessionAccess?{code}:{ code, token }),
       cache: 'no-store',
       referrerPolicy: 'no-referrer',
       signal: controller.signal,
@@ -70,13 +74,13 @@ export default function OrderStatus({ code, paymentEnabled, paymentReturn }: {
       .then(async (response) => {
         if (response.status === 404) return setState({ kind: 'not_found' });
         if (!response.ok) return setState({ kind: 'error' });
-        setState({ kind: 'ok', order: (await response.json()) as OrderView, token });
+        setState({ kind: 'ok', order: (await response.json()) as OrderView, token:sessionAccess?'':token! });
       })
       .catch(() => {
         if (!controller.signal.aborted) setState({ kind: 'error' });
       });
     return () => controller.abort();
-  }, [code]);
+  }, [code,sessionAccess]);
 
   if (state.kind === 'loading') {
     return (
@@ -100,13 +104,14 @@ export default function OrderStatus({ code, paymentEnabled, paymentReturn }: {
         <Link href="/tienda" className="store-btn store-btn-ghost" prefetch={false}>
           Volver a la tienda
         </Link>
+        {recoveryEnabled&&<p><Link href="/pedido/recuperar" prefetch={false}>Recuperar seguimiento por email</Link></p>}
       </div>
     );
   }
 
   const { order, token } = state;
   const pending = order.paymentStatus === 'pending';
-  const canPay = paymentEnabled && pending && !order.needsAttention && !!order.reservationExpiresAt
+  const canPay = !sessionAccess && paymentEnabled && pending && !order.needsAttention && !!order.reservationExpiresAt
     && Date.parse(order.reservationExpiresAt) > Date.now() && payment !== 'unavailable';
   const privateLink = `${window.location.origin}/pedido/${order.code}#${TOKEN_FRAGMENT}=${token}`;
 
@@ -242,7 +247,7 @@ export default function OrderStatus({ code, paymentEnabled, paymentReturn }: {
 
       <section className="ck-card ck-private" aria-labelledby="ck-private-title">
         <h2 id="ck-private-title">Enlace privado</h2>
-        <p className="ck-hint">
+        {!sessionAccess&&<><p className="ck-hint">
           Guardalo para volver a ver este pedido. Es personal: quien lo tenga puede ver el estado y los productos (no tus datos de
           contacto ni tu dirección).
         </p>
@@ -263,7 +268,15 @@ export default function OrderStatus({ code, paymentEnabled, paymentReturn }: {
         </button>
         <span className="ck-sr-only" role="status">
           {copied ? 'Enlace copiado' : ''}
-        </span>
+        </span></>}
+        {sessionAccess&&<><p>Estás usando un acceso privado temporal de 30 minutos. Para volver más adelante, solicitá otro acceso por email.</p>
+        <button type="button" className="store-btn store-btn-ghost" disabled={closing} onClick={async()=>{
+          setClosing(true);setCloseError(false);
+          try{const r=await fetch('/api/pedido/salir',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}',cache:'no-store',referrerPolicy:'no-referrer'});
+            if(!r.ok)throw new Error('close');window.location.assign('/pedido/recuperar');
+          }catch{setCloseError(true);setClosing(false);}
+        }}>Cerrar acceso privado</button>{closeError&&<p role="alert">No pudimos cerrar el acceso. Intentá nuevamente.</p>}</>}
+        {recoveryEnabled&&<p><Link href="/pedido/recuperar" prefetch={false}>Recuperar seguimiento por email</Link></p>}
       </section>
     </div>
   );

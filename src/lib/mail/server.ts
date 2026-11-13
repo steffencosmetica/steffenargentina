@@ -5,6 +5,7 @@ import { EMAIL, WHATSAPP_NUMERO } from '@/lib/site';
 import { mailConfigFromEnv } from './config.ts';
 import { createTransport, type MailTransport } from './transports.ts';
 import { drainOnce, supabaseQueue } from './worker.ts';
+import { orderMailEnabled } from './order-config.ts';
 
 // Envío inmediato «después de responder»: la respuesta al navegador (con la constancia web) nunca espera al
 // correo. Si este intento falla o el proceso se reinicia, la comunicación sigue pendiente en la base y la
@@ -31,7 +32,7 @@ export function scheduleMailDrain(): void {
   after(async () => {
     try {
       await drainOnce({
-        queue: supabaseQueue(createServiceClient()),
+        queue: supabaseQueue(createServiceClient(),120,orderMailEnabled(process.env)),
         transport,
         context: { linkBaseUrl, contactEmail: EMAIL, whatsapp: WHATSAPP_NUMERO },
         worker: `web-${process.pid}`,

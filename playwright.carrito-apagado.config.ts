@@ -31,6 +31,8 @@ export default defineConfig({
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: LOCAL_SUPABASE.publishableKey,
       // explícitamente apagado (aunque la variable existiera en el entorno de quien corre las pruebas)
       STEFFEN_CART_ENABLED: '0',
+      STEFFEN_ORDER_COMMS: '0',
+      MAIL_TRANSPORT: 'desactivado',
       // páginas legales y arrepentimiento explícitamente apagados (comportamiento por defecto en producción)
       STEFFEN_LEGAL_PAGES: '0',
       STEFFEN_REVOCATION_ENABLED: '0',

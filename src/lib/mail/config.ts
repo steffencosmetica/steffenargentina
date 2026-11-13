@@ -61,6 +61,7 @@ export function mailConfigFromEnv(env: Record<string, string | undefined>): Mail
     return { ok: true, config: { transport, captureDir, from, replyTo, linkBaseUrl } };
   }
   if (transport === 'smtp') {
+    if (env.VERCEL || env.VERCEL_ENV) return { ok:false,error:'SMTP permanece bloqueado en Vercel' };
     if (env.MAIL_ALLOW_REAL_SEND !== '1') return { ok: false, error: 'SMTP exige MAIL_ALLOW_REAL_SEND=1 (protección contra envíos reales accidentales)' };
     if (localLink) return { ok: false, error: 'SMTP no se usa con enlaces locales' };
     // Nunca correos reales con datos de prueba de la base local.

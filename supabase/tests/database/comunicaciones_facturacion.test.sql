@@ -1,0 +1,125 @@
+begin;
+set local timezone to 'America/Argentina/Buenos_Aires';
+create extension if not exists pgtap with schema extensions;
+select no_plan();
+insert into auth.users(id,email) values('ae000000-0000-4000-8000-000000000001','oficina@test.local');
+insert into public.admin_users(user_id) values('ae000000-0000-4000-8000-000000000001');
+select set_config('request.jwt.claim.sub','ae000000-0000-4000-8000-000000000001',true);
+insert into public.categories(id,name,slug) values('ae000000-0000-4000-8000-000000000002','Oficina','oficina');
+insert into public.products(id,sku,name,slug,category_id,price_ars,stock) values
+ ('ae000000-0000-4000-8000-000000000003','OFICINA','Producto histórico','oficina','ae000000-0000-4000-8000-000000000002',2000.10,30);
+insert into public.shipping_zones(id,name,price_ars) values('ae000000-0000-4000-8000-000000000004','Oficina',1500.21);
+insert into public.shipping_zone_provinces(zone_id,province_code) values('ae000000-0000-4000-8000-000000000004','AR-C');
+update public.store_settings set checkout_enabled=true;
+create temp table fixtures(n int,o jsonb);
+do $$ begin for i in 1..3 loop
+ insert into fixtures values(i,public.crear_pedido('oficina-'||i||repeat('a',30),
+ jsonb_build_object('name','Comprador Test','email','oficina-'||i||'@test.local','phone','+54 11 5555-0000'),
+ '{"street":"Av. Siempre Viva","number":"742","city":"Ciudad","postal_code":"C1000AAA","province_code":"AR-C"}',
+ '[{"product_id":"ae000000-0000-4000-8000-000000000003","quantity":2}]',5500.41,'198.51.100.31'));
+ end loop; end $$;
+create function pg_temp.oid(n int) returns uuid language sql as $$select (o->>'order_id')::uuid from fixtures where fixtures.n=$1$$;
+select is((select count(*) from public.revocation_messages where kind='pedido_recibido'),3::bigint,'creación transaccional encola una vez');
+select is((select (payload->>'total_cents')::bigint from private.order_message_data d join public.revocation_messages m on m.id=d.message_id where m.order_id=pg_temp.oid(1)),550041::bigint,'snapshot exacto con envío');
+select is(private.enqueue_order_mail(pg_temp.oid(1),'pedido_recibido','received:'||pg_temp.oid(1)),null::uuid,'evento comercial idempotente');
+select is((select count(*) from public.comunicaciones_reclamar('legacy-test',50,30)),0::bigint,'worker legacy no reclama correos de tienda');
+select lives_ok($$select private.aplicar_pago(pg_temp.oid(1),'oficina-pago-1','approved',5500.41)$$,'confirmación legítima reutiliza función financiera');
+select lives_ok($$select private.aplicar_pago(pg_temp.oid(1),'oficina-pago-1','approved',5500.41)$$,'confirmación repetida');
+select is((select count(*) from public.revocation_messages where kind='pago_confirmado'),1::bigint,'webhook repetido no duplica email');
+select lives_ok($$select public.admin_operar_pedido(pg_temp.oid(1),(select admin_version from public.orders where id=pg_temp.oid(1)),'preparing')$$,'preparación no envía despacho');
+select is((select count(*) from public.revocation_messages where kind='pedido_despachado'),0::bigint,'sin email antes del despacho efectivo');
+select lives_ok($$select public.admin_operar_pedido(pg_temp.oid(1),(select admin_version from public.orders where id=pg_temp.oid(1)),'shipped',null,'Andreani','ABC',clock_timestamp())$$,'despacho efectivo encola');
+create temp table claimed as select * from public.comunicaciones_reclamar_tienda('tienda-test',50,30);
+select is((select count(*) from claimed where kind='pedido_despachado'),1::bigint,'un despacho');
+select is((select payload->>'tracking' from claimed where kind='pedido_despachado'),'ABC','datos reales del despacho');
+select ok((select bool_and(public.comunicaciones_validar_envio(id,lease_id)) from claimed),'concesiones válidas');
+update public.revocation_messages set locked_until=clock_timestamp()-interval '1 second' where id=(select id from claimed where kind='pedido_recibido' limit 1);
+select is(public.comunicaciones_resultado(id,lease_id,'aceptado'),'sin_cambios','trabajador vencido no finaliza') from claimed where id=(select id from public.revocation_messages where locked_until<clock_timestamp() limit 1);
+select throws_ok($$select public.admin_corregir_despacho(pg_temp.oid(1),(select admin_version from public.orders where id=pg_temp.oid(1)),'Otro','DEF',clock_timestamp(),'Corregir datos reales',true)$$,'55000','dispatch_sending','no modifica datos durante envío');
+select public.comunicaciones_resultado(id,lease_id,'aceptado') from claimed where kind='pedido_despachado';
+select lives_ok($$select public.admin_corregir_despacho(pg_temp.oid(1),(select admin_version from public.orders where id=pg_temp.oid(1)),'Otro','DEF',clock_timestamp(),'Corregir datos reales',true)$$,'corrección explícita auditada');
+select is((select count(*) from public.revocation_messages where kind='pedido_despachado'),2::bigint,'corrección es nuevo evento');
+select is((select payload->>'correction' from private.order_message_data d join public.revocation_messages m on m.id=d.message_id where m.kind='pedido_despachado' and m.status='pendiente'),'true','corrección identificada');
+select lives_ok($$select public.admin_registrar_factura(pg_temp.oid(1),-1,'00001','00000001',current_date,550041,'Comprobante real de prueba',true)$$,'registro administrativo Factura C');
+select is((select send_status from private.order_invoices where order_id=pg_temp.oid(1)),'pending','registrar factura no declara envío');
+select is((select count(*) from public.revocation_messages where order_id=pg_temp.oid(1) and kind not in ('pedido_recibido','pago_confirmado','pedido_despachado')),0::bigint,'factura no crea email');
+select throws_ok($$select public.admin_registrar_factura(pg_temp.oid(2),-1,'00001','00000001',current_date,550041,'Comprobante duplicado',true)$$,'23505',null,'número fiscal único');
+select throws_ok($$select public.admin_registrar_factura(pg_temp.oid(1),-1,'00001','00000002',current_date,550041,'Versión consumida',true)$$,'55000',null,'replay administrativo rechazado');
+select throws_ok($$select public.admin_registrar_factura(pg_temp.oid(2),-1,'00000','00000002',current_date,550041,'Número no válido',true)$$,'22023',null,'punto de venta cero inválido');
+select throws_ok($$select public.admin_registrar_factura(pg_temp.oid(2),-1,'00001','00000002',current_date,550041,'Falta confirmar',false)$$,'22023',null,'confirmación obligatoria');
+select throws_ok($$select public.admin_registrar_envio_factura(pg_temp.oid(1),0,'sent','oficina-1@test.local',current_date::timestamptz-interval '1 second','Anterior al día de emisión',true)$$,'55000',null,'envío no puede anteceder al día fiscal argentino');
+select lives_ok($$select public.admin_registrar_envio_factura(pg_temp.oid(1),0,'sent','oficina-1@test.local',clock_timestamp(),'Enviado manualmente en prueba',true)$$,'envío manual declarado');
+select is((public.admin_ver_oficina_pedido(pg_temp.oid(1))->'invoice'->>'send_status'),'sent','emisión separada de envío');
+select lives_ok($$select public.admin_registrar_factura(pg_temp.oid(1),1,'00001','00000001',current_date,550041,'Corrección administrativa',true)$$,'corregir conserva auditoría');
+select is((select count(*) from private.order_office_events where order_id=pg_temp.oid(1) and kind like 'invoice%'),3::bigint,'historial de factura y envío intacto');
+select is((select send_status from private.order_invoices where order_id=pg_temp.oid(1)),'pending','corrección deja revisión del envío pendiente');
+select lives_ok($$select public.admin_registrar_factura(pg_temp.oid(2),-1,'00001','00000002',current_date,550041,'Factura existente sin acreditar',true)$$,'no se oculta comprobante real de pedido impago');
+select is((public.admin_ver_oficina_pedido(pg_temp.oid(2))->>'review_required')::boolean,true,'impago exige revisión fiscal');
+select is((select stock from public.products where sku='OFICINA'),24,'facturación y correos no mueven stock');
+create function pg_temp.fail_paid_mail() returns trigger language plpgsql as $$begin
+ if new.kind='pago_confirmado' then raise exception 'Persistencia de cola caída';end if;return new;end$$;
+create trigger fail_paid_mail before insert on public.revocation_messages for each row execute function pg_temp.fail_paid_mail();
+select throws_ok($$select private.aplicar_pago(pg_temp.oid(2),'oficina-pago-2','approved',5500.41)$$,'P0001','Persistencia de cola caída','si falla persistencia no se pierde la notificación');
+select is((select payment_status from public.orders where id=pg_temp.oid(2)),'pending','transición revertida atómicamente para reintento financiero');
+drop trigger fail_paid_mail on public.revocation_messages;
+-- Viaje del reloj SOLO para el fixture transaccional, igual que pedidos.test.sql.
+alter table public.orders disable trigger orders_validar_cambios;
+update public.orders set reservation_expires_at=clock_timestamp()-interval '1 second' where id=pg_temp.oid(3);
+alter table public.orders enable trigger orders_validar_cambios;
+select public.liberar_reservas_vencidas();
+update public.products set stock=0 where sku='OFICINA';
+select lives_ok($$select private.aplicar_pago(pg_temp.oid(3),'oficina-pago-3','approved',5500.41)$$,'pago tardío sin stock queda legítimamente acreditado con incidencia');
+select is((select stock_state from public.orders where id=pg_temp.oid(3)),'shortage','sin preparación automática');
+select is((select (private.prepare_order_mail(m)->>'needs_attention')::boolean from public.revocation_messages m where m.order_id=pg_temp.oid(3) and m.kind='pago_confirmado'),true,'plantilla de incidencia usa estado final transaccional');
+insert into private.observed_refunds(id,order_id,provider_order_id,payment_id,cents,confirmed_at)
+ values(gen_random_uuid(),pg_temp.oid(1),'ORDMOCKTEST','PAYMOCKTEST',10000,clock_timestamp());
+select is((public.admin_ver_oficina_pedido(pg_temp.oid(1))->>'review_required')::boolean,true,'reembolso posterior exige revisión fiscal');
+select is((select cents from private.order_invoices where order_id=pg_temp.oid(1)),550041::bigint,'reembolso no reescribe comprobante');
+insert into private.chargeback_cases(id,order_id,payment_id,cents,impact_cents,status,documentation,opened_at,revision)
+ values(gen_random_uuid(),pg_temp.oid(1),'PAYMOCKTEST',550041,0,'open','pending',clock_timestamp(),1);
+select is((public.admin_ver_oficina_pedido(pg_temp.oid(1))->>'review_required')::boolean,true,'contracargo visible como tarea administrativa');
+select is((select send_status from private.order_invoices where order_id=pg_temp.oid(1)),'pending','contracargo no inventa envío ni nota de crédito');
+select is(public.solicitar_recuperacion_pedido((select o->>'code' from fixtures where n=2),'otro@test.local','198.51.100.32'),'{"ok":true}'::jsonb,'email incorrecto respuesta uniforme');
+select is(public.solicitar_recuperacion_pedido('STF-2026-ZZZZ','otro@test.local','198.51.100.32'),'{"ok":true}'::jsonb,'pedido inexistente respuesta uniforme');
+select is((select count(*) from public.revocation_messages where kind='recuperacion_pedido'),0::bigint,'sin enviar a destinatario ajeno');
+select public.solicitar_recuperacion_pedido(o->>'code','oficina-2@test.local','198.51.100.32') from fixtures where n=2;
+select public.solicitar_recuperacion_pedido(o->>'code','oficina-2@test.local','198.51.100.33') from fixtures where n=2;
+select is((select count(*) from public.revocation_messages where kind='recuperacion_pedido'),1::bigint,'dos solicitudes no duplican correo');
+create temp table access_claim as select * from public.comunicaciones_reclamar_tienda('access-test',50,30) where kind='recuperacion_pedido';
+select is((select count(*) from private.order_access_tokens),1::bigint,'solo hash persistido');
+select ok((select octet_length(token_hash)=32 from private.order_access_tokens),'hash SHA256');
+select is(public.canjear_recuperacion_pedido(repeat('x',43),'198.51.100.34'),null::jsonb,'token manipulado rechazado');
+create temp table redeemed as select public.canjear_recuperacion_pedido(payload->>'token','198.51.100.34') j from access_claim;
+select is((select j->>'code' from redeemed),(select o->>'code' from fixtures where n=2),'acceso al pedido correcto');
+select is(public.canjear_recuperacion_pedido(payload->>'token','198.51.100.34'),null::jsonb,'token de un solo uso') from access_claim;
+select ok(public.consultar_pedido_recuperado((select o->>'code' from fixtures where n=2),(select j->>'session' from redeemed),'198.51.100.34') is not null,'sesión privada permite mismo seguimiento');
+select is(public.consultar_pedido_recuperado((select o->>'code' from fixtures where n=1),(select j->>'session' from redeemed),'198.51.100.34'),null::jsonb,'no permite otro pedido');
+update private.order_access_tokens set expires_at=clock_timestamp()-interval '1 second' where kind='session';
+select is(public.consultar_pedido_recuperado((select o->>'code' from fixtures where n=2),(select j->>'session' from redeemed),'198.51.100.34'),null::jsonb,'sesión vencida rechazada');
+insert into private.order_access_tokens(order_id,token_hash,kind,expires_at) values(pg_temp.oid(2),extensions.digest(repeat('c',43),'sha256'),'session',clock_timestamp()+interval '30 minutes');
+select ok(public.consultar_pedido_recuperado((select o->>'code' from fixtures where n=2),repeat('c',43),'198.51.100.34') is not null,'sesión activa antes del cierre');
+select lives_ok($$select public.revocar_acceso_pedido(repeat('c',43))$$,'revocación durable');
+select is(public.consultar_pedido_recuperado((select o->>'code' from fixtures where n=2),repeat('c',43),'198.51.100.34'),null::jsonb,'cookie revocada no permite acceso aunque no haya vencido');
+select ok(not has_function_privilege('anon','public.revocar_acceso_pedido(text)','execute'),'revocación no expuesta como RPC anónima');
+insert into private.order_access_tokens(order_id,message_id,token_hash,kind,expires_at)
+ select pg_temp.oid(2),id,extensions.digest(repeat('b',43),'sha256'),'recovery',clock_timestamp()-interval '1 second' from access_claim;
+select is(public.canjear_recuperacion_pedido(repeat('b',43),'198.51.100.34'),null::jsonb,'token de recuperación vencido rechazado');
+update private.order_access_tokens set expires_at=clock_timestamp()-interval '1 second' where message_id=(select id from access_claim);
+update public.revocation_messages set created_at=clock_timestamp()-interval '6 minutes',locked_until=clock_timestamp()-interval '1 second' where id=(select id from access_claim);
+select public.solicitar_recuperacion_pedido(o->>'code','oficina-2@test.local','198.51.100.36') from fixtures where n=2;
+select is((select count(*) from public.revocation_messages where order_id=pg_temp.oid(2) and kind='recuperacion_pedido'),2::bigint,'acceso vencido ambiguo no bloquea nueva recuperación');
+select is((select status from public.revocation_messages where id=(select id from access_claim)),'vencido','intento vencido preservado sin duplicar activo');
+select ok(exists(select 1 from public.revocation_message_events where message_id=(select id from access_claim) and action='vencido'),'vencimiento auditable');
+select ok(exists(select 1 from private.order_access_events where kind='request' and order_id=pg_temp.oid(2) and success),'solicitud legítima auditada');
+select public.solicitar_recuperacion_pedido('STF-2026-ZZZZ','otro@test.local','198.51.100.35') from generate_series(1,5);
+select is(public.solicitar_recuperacion_pedido('STF-2026-ZZZZ','otro@test.local','198.51.100.35'),'{"limited":true}'::jsonb,'ráfaga bloqueada sin revelar asociación');
+select ok(not has_function_privilege('anon','public.solicitar_recuperacion_pedido(text,text,inet)','execute'),'anon no llama RPC recuperación');
+select ok(not has_function_privilege('authenticated','public.canjear_recuperacion_pedido(text,inet)','execute'),'comprador no canjea directo');
+select ok(not has_function_privilege('service_role','public.admin_registrar_factura(uuid,integer,text,text,date,bigint,text,boolean)','execute'),'service no sustituye administrador');
+select ok((select bool_and(c.relrowsecurity) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='private' and c.relname in ('order_message_data','order_access_tokens','order_access_events','order_invoices','order_office_events')),'RLS en todas las tablas nuevas');
+select ok(not exists(select 1 from pg_class c join pg_namespace n on n.oid=c.relnamespace cross join (values('anon'),('authenticated'),('service_role')) r(role)
+ where n.nspname='private' and c.relname in ('order_message_data','order_access_tokens','order_access_events','order_invoices','order_office_events') and has_table_privilege(r.role,c.oid,'SELECT,INSERT,UPDATE,DELETE')),'ningún acceso directo a datos personales');
+select set_config('request.jwt.claim.sub','ae000000-0000-4000-8000-000000000099',true);
+select throws_ok($$select public.admin_ver_oficina_pedido(pg_temp.oid(1))$$,'42501',null,'no administrador rechazado');
+select * from finish();
+rollback;

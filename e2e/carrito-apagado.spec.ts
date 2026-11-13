@@ -12,6 +12,7 @@ test('posventa apagada en producción incluso con flags mock configurados', asyn
     await page.goto('/admin/pedidos/bb600000-0000-4000-8000-000000000026');
     await expect(page.getByRole('heading',{name:'Comprador',exact:true})).toBeVisible();
     await expect(page.getByRole('region',{name:'Posventa simulada'})).toHaveCount(0);
+    await expect(page.getByRole('region',{name:'Comunicaciones y Factura C'})).toHaveCount(0);
     await expect(page.getByRole('button',{name:/Enviar reintegro|Pagar con Mercado Pago/})).toHaveCount(0);
   } finally { localSql(`do $$ begin ${cleanup} end $$`); }
 });
@@ -39,7 +40,7 @@ test('la ficha sigue ofreciendo la consulta por WhatsApp como acción principal'
 });
 
 test('el checkout y el seguimiento no existen (aunque esté la clave de servidor)', async ({ page, request }) => {
-  for (const path of ['/checkout', '/pedido/STF-2611-ABCD']) {
+  for (const path of ['/checkout', '/pedido/STF-2611-ABCD','/pedido/recuperar']) {
     const response = await page.goto(path);
     expect(response?.status(), path).toBe(404);
     await expect(page.getByTestId('ck-form')).toHaveCount(0);
@@ -51,6 +52,10 @@ test('el checkout y el seguimiento no existen (aunque esté la clave de servidor
     request.post('/api/pedido/consultar', { data: { code: 'STF-2611-ABCD', token: 'a'.repeat(43) } }),
     request.post('/api/pedido/pago', { data: { code: 'STF-2611-ABCD', token: 'a'.repeat(43) } }),
     request.post('/api/mercadopago/webhook', { data: {} }),
+    request.post('/api/pedido/recuperar', {data:{code:'STF-2611-ABCD',email:'a@test.local'}}),
+    request.post('/api/pedido/acceso', {data:{token:'a'.repeat(43)}}),
+    request.post('/api/pedido/salir', {data:{}}),
+    request.post('/api/pedido/recuperado', {data:{code:'STF-2611-ABCD'}}),
   ];
   for (const response of await Promise.all(calls)) expect(response.status(), response.url()).toBe(404);
 });

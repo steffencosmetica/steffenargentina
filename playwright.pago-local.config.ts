@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { LOCAL_SUPABASE, localSecretKey, MOCK_WEBHOOK_FIXTURE } from './e2e/local';
+import { LOCAL_SUPABASE, localSecretKey, MOCK_WEBHOOK_FIXTURE,mailEnv } from './e2e/local';
 
 const origin = 'http://localhost:3103';
 
@@ -29,6 +29,9 @@ export default defineConfig({
       NEXT_PUBLIC_SUPABASE_URL: LOCAL_SUPABASE.url,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: LOCAL_SUPABASE.publishableKey,
       SUPABASE_SECRET_KEY: localSecretKey(),
+      ...mailEnv(),
+      MAIL_LINK_BASE_URL: origin,
+      STEFFEN_ORDER_COMMS: '1',
       STEFFEN_CART_ENABLED: '1',
       STEFFEN_LEGAL_PAGES: '1',
       STEFFEN_REVOCATION_ENABLED: '1',

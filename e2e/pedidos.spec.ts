@@ -4,6 +4,28 @@ import { ADMIN_STATE, authCookies } from './helpers';
 import { localSql, setLocalCheckout } from './local';
 import { IDS } from './global-setup';
 test.use({ storageState: ADMIN_STATE });
+
+test('5E Factura C: registro, envío manual y corrección auditada sin correo automático',async({page})=>{
+ await page.goto('/admin/pedidos/bb600000-0000-4000-8000-000000000026');
+ const office=page.getByRole('region',{name:'Comunicaciones y Factura C'});await expect(office).toBeVisible();
+ await office.getByText('Registrar Factura C emitida en ARCA',{exact:true}).click();
+ let form=office.locator('form').filter({has:page.locator('input[name="operation"][value="invoice"]')});
+ await form.getByLabel('Punto de venta').fill('1');await form.getByLabel('Número de comprobante').fill('123');
+ await form.getByLabel('Fecha de emisión').fill('2026-11-01');await form.getByLabel('Importe facturado (ARS)').fill('1250,00');
+ await form.getByLabel('Motivo u observaciones del registro').fill('Comprobante ficticio ya emitido');await form.getByRole('checkbox').check();
+ await form.getByRole('button',{name:'Registrar Factura C',exact:true}).click();await expect(office.getByText('Emitida · Factura C 00001-00000123')).toBeVisible();
+ await expect(office.getByText('Envío: Envío pendiente')).toBeVisible();
+ await office.getByText('Registrar envío manual del PDF',{exact:true}).click();
+ form=office.locator('form').filter({has:page.locator('input[name="operation"][value="invoice_send"]')});
+ const localDate=await page.evaluate(()=>{const d=new Date(Date.now()-120000);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);});
+ await form.getByLabel('Fecha del envío o gestión declarada (hora local del dispositivo)').fill(localDate);
+ await form.getByLabel('Motivo u observaciones del registro').fill('PDF enviado manualmente en prueba');await form.getByRole('checkbox').check();
+ await form.getByRole('button',{name:'Guardar declaración de envío'}).click();await expect(office.getByText('Envío: Enviada (declaración administrativa)')).toBeVisible();
+ expect(localSql("select count(*)::int n from private.order_office_events where order_id='bb600000-0000-4000-8000-000000000026'")).toEqual([{n:2}]);
+ expect(localSql("select stock from public.products where id='bb600000-0000-4000-8000-000000000002'")).toEqual([{stock:74}]);
+ await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:test.info().outputPath('factura-c-mobile.png'),fullPage:true});
+});
 const CLEAN_FIXTURES = `
   delete from public.orders where id::text like 'bb600000-%';
   delete from public.products where id::text like 'bb600000-%';

@@ -8,6 +8,75 @@ import { seedStore, STORE } from './tienda-data';
 import { ADMIN } from './local';
 import { loginAsAdmin } from './helpers';
 import { reconcileAfterSales } from '../src/lib/orders/after-sales-reconciliation';
+import {existsSync,readdirSync,readFileSync} from 'node:fs';
+import {join} from 'node:path';
+import {MAIL_E2E} from './local';
+import {drainOnce,supabaseQueue} from '../src/lib/mail/worker';
+import {fileTransport} from '../src/lib/mail/transports';
+
+test('5E acreditación legítima y despacho: correos únicos y corrección explícita @pago-local',async({page})=>{
+ const{id,code}=await createFinancialFixture(page);
+ localSql("update private.mock_checkout_orders set status='processed',status_detail='accredited',paid_amount=total_ars,revision=2,payment_id='PAYMOCK'||repeat('c',32)");
+ const hook=signedWebhook(id,'59005');expect((await page.request.post(hook.path,hook)).status()).toBe(200);
+ expect((await reconcilePayment(reconciliationClient()))?.result).toBe('approved');
+ const again=signedWebhook(id,'59006');expect((await page.request.post(again.path,again)).status()).toBe(200);await reconcilePayment(reconciliationClient());
+ const drain=()=>drainOnce({queue:supabaseQueue(reconciliationClient(),120,true),transport:fileTransport({transport:'archivo',captureDir:MAIL_E2E.captureDir,from:MAIL_E2E.from,linkBaseUrl:'http://localhost:3103'}),
+  context:{linkBaseUrl:'http://localhost:3103',contactEmail:'info@steffenargentina.com.ar',whatsapp:'+54 9 223-559-0428'},worker:'e2e-order',limit:50});
+ await drain();await drain();expect(orderMails(code).filter(m=>m.subject.startsWith('Pago confirmado'))).toHaveLength(1);
+ expect(orderMails(code).find(m=>m.subject.startsWith('Pago confirmado'))!.text).toContain('1 y 3 días hábiles');
+ const[order]=localSql(`select id from public.orders where code='${code}'`) as {id:string}[];
+ localSql(`do $$begin perform set_config('request.jwt.claim.sub',(select id::text from auth.users where email='admin@steffen.test'),true);
+ perform public.admin_operar_pedido('${order.id}',(select admin_version from public.orders where id='${order.id}'),'preparing');
+ perform public.admin_operar_pedido('${order.id}',(select admin_version from public.orders where id='${order.id}'),'shipped',null,'Andreani','NUMERO-REAL-DE-PRUEBA',clock_timestamp());end$$`);
+ await drain();expect(orderMails(code).filter(m=>m.subject.startsWith('Pedido despachado'))).toHaveLength(1);
+ expect(orderMails(code).find(m=>m.subject.startsWith('Pedido despachado'))!.text).toContain('NUMERO-REAL-DE-PRUEBA');
+ localSql(`do $$begin perform set_config('request.jwt.claim.sub',(select id::text from auth.users where email='admin@steffen.test'),true);
+ perform public.admin_corregir_despacho('${order.id}',(select admin_version from public.orders where id='${order.id}'),'Otro transporte','CORREGIDO',clock_timestamp(),'Corrección de seguimiento ficticio',true);end$$`);
+ await drain();await drain();expect(orderMails(code).filter(m=>m.subject.startsWith('Corrección de despacho'))).toHaveLength(1);
+ expect(orderMails(code).find(m=>m.subject.startsWith('Corrección de despacho'))!.text).toContain('CORREGIDO');
+});
+
+function orderMails(code:string){
+ return existsSync(MAIL_E2E.captureDir)?readdirSync(MAIL_E2E.captureDir).filter(f=>f.endsWith('.json')).map(f=>JSON.parse(readFileSync(join(MAIL_E2E.captureDir,f),'utf8')) as {to:string;subject:string;text:string;html:string}).filter(m=>m.subject.includes(code)):[];
+}
+test('5E pedido recibido y recuperación por email con sesión privada de un uso',async({page,browser})=>{
+ localSql('delete from private.order_access_events');
+ const {code,token}=await createViaApi(page,'recovery@steffen.test');
+ await expect.poll(()=>orderMails(code).filter(m=>m.subject.startsWith('Recibimos')).length).toBe(1);
+ const receipt=orderMails(code).find(m=>m.subject.startsWith('Recibimos'))!;
+ expect(receipt.to).toBe('recovery@steffen.test');expect(receipt.text).toContain('pendiente de pago');expect(receipt.text).not.toContain(token);
+ await page.goto('/pedido/recuperar');await page.getByLabel('Código del pedido').fill(code);await page.getByLabel('Email de la compra').fill('recovery@steffen.test');
+ await page.getByRole('button',{name:'Enviarme un acceso privado'}).click();await expect(page.locator('.ck-card').getByRole('status')).toContainText('Si el código y el email coinciden');
+ await expect.poll(()=>orderMails(code).filter(m=>m.subject.startsWith('Acceso privado')).length).toBe(1);
+ const access=orderMails(code).find(m=>m.subject.startsWith('Acceso privado'))!;const secret=/#t=([A-Za-z0-9_-]{43})/.exec(access.text)![1];
+ expect(secret).not.toBe(token);const context=await browser.newContext({storageState:{cookies:[],origins:[]}});const recovered=await context.newPage();
+ const urls:string[]=[];recovered.on('request',r=>urls.push(r.url()));
+ const response=await recovered.goto(`/pedido/recuperar#t=${secret}`);await expect(recovered.getByRole('button',{name:'Ver mi pedido'})).toBeVisible();
+ expect(recovered.url()).not.toContain(secret);expect(response!.headers()['referrer-policy']).toBe('no-referrer');
+ await recovered.getByRole('button',{name:'Ver mi pedido'}).click();await expect(recovered.getByTestId('order-code')).toHaveText(code);
+ await expect(recovered.getByRole('button',{name:/Copiar enlace/})).toHaveCount(0);expect(urls.some(u=>u.includes(secret)||u.includes(token))).toBe(false);
+ const cookies=await context.cookies();const cookie=cookies.find(c=>c.name==='steffen-order-access')!;expect(cookie.httpOnly).toBe(true);expect(cookie.sameSite).toBe('Strict');
+ expect((await recovered.request.post('/api/pedido/acceso',{data:{token:secret}})).status()).toBe(404);
+ expect(localSql('select payment_status,stock_state from public.orders')).toEqual([{payment_status:'pending',stock_state:'reserved'}]);
+ await recovered.setViewportSize({width:390,height:844});expect(await recovered.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await recovered.screenshot({path:test.info().outputPath('recuperacion-mobile.png'),fullPage:true});
+ expect((await recovered.request.post('/api/pedido/salir',{headers:{Origin:'https://otro.test'},data:{}})).status()).toBe(403);
+ await recovered.getByRole('button',{name:'Cerrar acceso privado'}).click();await expect(recovered).toHaveURL(/\/pedido\/recuperar$/);
+ expect((await recovered.request.post('/api/pedido/recuperado',{headers:{Cookie:`steffen-order-access=${cookie.value}`},data:{code}})).status()).toBe(404);
+ await context.close();
+});
+test('5E recuperación uniforme, CSRF, cuerpo acotado y límite antiabuso',async({page})=>{
+ localSql('delete from private.order_access_events');
+ const {code}=await createViaApi(page,'private@steffen.test');
+ const request=(c:string,email:string)=>page.request.post('/api/pedido/recuperar',{data:{code:c,email}});
+ const a=await request(code,'otro@steffen.test'),b=await request('STF-2026-ZZZZ','otro@steffen.test');
+ expect(a.status()).toBe(202);expect(b.status()).toBe(202);expect(await a.json()).toEqual(await b.json());
+ expect(localSql("select id from public.revocation_messages where kind='recuperacion_pedido'")).toHaveLength(0);
+ expect((await page.request.post('/api/pedido/recuperar',{headers:{Origin:'https://otro.test'},data:{code,email:'private@steffen.test'}})).status()).toBe(403);
+ expect((await page.request.post('/api/pedido/recuperar',{data:{code,email:'x'.repeat(2000)}})).status()).toBe(413);
+ for(let i=0;i<3;i++)expect((await request(code,'otro@steffen.test')).status()).toBe(202);
+ expect((await request(code,'otro@steffen.test')).status()).toBe(429);
+});
 
 test('5D respuesta remota confirmada con persistencia caída se recupera sin reenviar @pago-local', async ({page})=>{
   const {id,code}=await createFinancialFixture(page);

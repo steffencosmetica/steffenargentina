@@ -30,6 +30,8 @@ export default defineConfig({
       NEXT_PUBLIC_SUPABASE_URL: LOCAL_SUPABASE.url,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: LOCAL_SUPABASE.publishableKey,
       SUPABASE_SECRET_KEY: localSecretKey(),
+      STEFFEN_ORDER_COMMS: '0',
+      MAIL_TRANSPORT: 'desactivado',
       STEFFEN_CART_ENABLED: '1',
       STEFFEN_LEGAL_PAGES: '0',
       STEFFEN_REVOCATION_ENABLED: '1',

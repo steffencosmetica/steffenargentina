@@ -339,6 +339,17 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
+            comunicaciones_reclamar_tienda: Database['public']['Functions']['comunicaciones_reclamar'];
+            comunicaciones_validar_envio: { Args: {p_id:string;p_lease:string}; Returns:boolean };
+            solicitar_recuperacion_pedido: {Args:{p_code:string;p_email:string;p_ip:string};Returns:Json};
+            canjear_recuperacion_pedido: {Args:{p_token:string;p_ip:string};Returns:Json};
+            consultar_pedido_recuperado: {Args:{p_code:string;p_session:string;p_ip:string};Returns:Json};
+            revocar_acceso_pedido: {Args:{p_session:string};Returns:undefined};
+            admin_ver_oficina_pedido: {Args:{p_order:string};Returns:Json};
+            admin_registrar_factura: {Args:{p_order:string;p_version:number;p_pos:string;p_number:string;p_date:string;p_cents:number;p_note:string;p_confirm:boolean};Returns:undefined};
+            admin_registrar_envio_factura: {Args:{p_order:string;p_version:number;p_status:string;p_email:string;p_date:string;p_note:string;p_confirm:boolean};Returns:undefined};
+            admin_corregir_despacho: {Args:{p_order:string;p_version:number;p_carrier:string;p_tracking:string;p_date:string;p_note:string;p_confirm:boolean};Returns:undefined};
+            admin_comunicacion_pedido: {Args:{p_order:string;p_id:string;p_version:number;p_action:string;p_note:string};Returns:undefined};
             tomar_posventa_simulada: { Args: Record<PropertyKey, never>; Returns: Json };
             resolver_posventa_simulada: { Args: { p_order: string; p_lease: string }; Returns: string };
             estado_posventa_simulada: { Args: Record<PropertyKey, never>; Returns: Json };

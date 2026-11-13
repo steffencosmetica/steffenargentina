@@ -8,6 +8,8 @@ import { formatArs, parseCentavos } from '@/lib/money';
 import OrderControls, { CopyData } from '@/components/admin/OrderControls';
 import AfterSalesPanel from '@/components/admin/AfterSalesPanel';
 import { readAfterSales } from '@/lib/orders/after-sales';
+import OrderOfficePanel from '@/components/admin/OrderOfficePanel';
+import { readOrderOffice } from '@/lib/orders/office';
 
 export const metadata = { title: 'Detalle de pedido' };
 export default async function OrderPage({ params }: { params: Promise<{ id: string }> }) {
@@ -18,6 +20,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
   if (!detail) notFound();
   const { order: o, items, events, province } = detail;
   const afterSales = await readAfterSales(id);
+  const office = await readOrderOffice(id);
   const money = (value: number) => formatArs(parseCentavos(String(value)));
   const address = `${o.ship_street} ${o.ship_number}${o.ship_unit ? `, ${o.ship_unit}` : ''}, ${o.ship_city}, ${province}, CP ${o.ship_postal_code}${o.ship_notes ? `. ${o.ship_notes}` : ''}`;
   return <>
@@ -32,6 +35,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
       {afterSales && <AfterSalesPanel order={id} refundKey={randomUUID()} returnKey={randomUUID()}
         data={afterSales} items={items} dispatched={['shipped','delivered'].includes(o.fulfillment_status)} shortage={o.resolution_reason === 'stock_shortage'} />}
       <section className="adm-card adm-card-body"><h2>Historial de movimientos</h2><ol className="adm-order-events">{events.map(event => { const data = event.data && typeof event.data === 'object' && !Array.isArray(event.data) ? event.data : {}; return <li key={event.id}><strong>{eventLabels[event.event_type] ?? 'Movimiento del pedido'}</strong><p>{dateTime(event.created_at)} · {event.actor === 'admin' ? 'Administrador' : event.actor === 'payment' ? 'Pago' : event.actor === 'checkout' ? 'Checkout' : 'Sistema'}</p>{typeof data.to === 'string' && fulfillmentLabels[data.to] && <p>{fulfillmentLabels[data.to]}</p>}</li>; })}</ol></section>
+      {office && <OrderOfficePanel order={id} version={o.admin_version} dispatched={['shipped','delivered'].includes(o.fulfillment_status)} carrier={o.dispatch_carrier} tracking={o.dispatch_tracking} email={o.buyer_email} data={office} />}
     </div><OrderControls key={o.id} order={o} /></div>
   </>;
 }

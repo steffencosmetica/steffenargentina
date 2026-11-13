@@ -745,3 +745,7 @@ body:has(.ck-bar) .whatsapp-float {
     transition: none;
   }
 }
+.ck-recovery-form { display:grid;gap:18px; }
+.ck-recovery-form label { display:grid;gap:6px; }
+.ck-recovery-form input { padding:12px;border:1px solid #aaa;border-radius:5px;width:100%;box-sizing:border-box;font:inherit; }
+.ck-recovery-honey { position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden; }

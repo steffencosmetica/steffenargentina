@@ -8,7 +8,7 @@
   <link rel="icon" href="img/logito.png" type="image/x-icon">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="commerce-stage product-family">
 
 
 
@@ -16,27 +16,23 @@
 
 
   <!-- Header -->
-  <header class="site-header">
-    <div class="container nav-content">
-     
-        <img src="img/logo.png" alt="Logo" class="logo">
-
-      <nav class="main-nav">
-        <a href="index.html">INICIO</a>
-        <a href="index.html#productos">PRODUCTOS</a>
-        <a href="index.html#quienes">QUIÉNES SOMOS</a>
-        <a href="img/CATALOGO%20STEFFEN%20COSMETICA%20CAPILAR%202025.pdf" target="_blank" rel="noopener">CATÁLOGO</a>
-        <a href="index.html#contacto">CONTACTO</a>
-      </nav>
-     
-      <a href="index.html#contacto-salon" class="btn-salon">Sumar a mi salón</a>
-      
-    </div>
-  </header>
+  <header class="site-header"><div class="container nav-content">
+ <a class="brand-link" href="index.html" aria-label="Steffen, inicio"><img src="img/logo.png" alt="Steffen Cosmética Capilar" class="logo" width="50" height="56"></a>
+ <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-menu">MENÚ</button>
+ <nav class="main-nav" id="main-menu" aria-label="Navegación principal">
+  <a href="index.html">INICIO</a>
+  <a href="index.html#productos" aria-current="page">PRODUCTOS</a>
+  <a href="index.html#quienes">QUIÉNES SOMOS</a>
+  <a class="nav-shop" href="https://steffenargentina.com">TIENDA ONLINE</a>
+  <a href="index.html#contacto">CONTACTO</a>
+ </nav>
+ <a href="https://steffenprofesional.com" class="btn-salon">Portal para profesionales</a>
+</div></header>
 
 
   
 <!-- Menú de categorías (vertical, a la izquierda) -->
+<aside class="family-tools" aria-label="Catálogo y familias"><a class="catalog-download" href="img/CATALOGO%20STEFFEN%20COSMETICA%20CAPILAR%202025.pdf" download="Catalogo-Steffen-2025.pdf">DESCARGAR CATÁLOGO EN PDF</a>
 <nav class="cat-nav" aria-label="Categorías de productos">
   <a href="reparadores.html">Serums</a>
   <a href="biphases.html">Bi-Phases</a>
@@ -45,16 +41,19 @@
   <a href="cremas.html">Máscaras Capilares</a>
   <a href="finishing.html" class="active" aria-current="page">Finishing</a>
 </nav>
+</aside>
+<main class="product-details">
 
 
   <!-- Brillo y cera -->
 
 
-<section class="brillo-section">
+<section class="product-detail brillo-section">
+  <img class="product-photo" src="img/destacados/brillo-lino.webp" alt="" width="640" height="640" loading="lazy">
   <div class="brillo-contenido">
-    <div class="texto">
+    <div class="texto" data-product-id="brillo-lino">
     <h3>finishing</h3>
-    <h1>BRILLO</h2>
+    <h1>BRILLO</h1>
     <h2>Semi de Lino</h2>
     <div>Creado para el peinador. Producto desarrollado para ser aplicado al finalizar el peinado, otorgándole un brillo superior. Seca en segundos y protege el peinado de la humedad. No contiene gas ni deja polvillo.
 <br><br>
@@ -64,18 +63,23 @@ Modo de uso: Aplicar a una distancia de 30cm. del peinado en forma de lluvia.</d
   </div>
 </section>
 
-<section class="cera-section">
+<section class="product-detail cera-section">
+  <img class="product-photo" src="img/fichas/cera-antiestatica.webp" alt="" width="640" height="640" loading="lazy">
   <div class="cera-contenido">
-    <div class="texto">
-    <h1>CERA ANTIESTATICA</h2>
+    <div class="texto" data-product-id="cera-antiestatica">
+    <h1>CERA ANTIESTATICA</h1>
     <div>Producto desarrollado para el peinador. Al quitar la estática del cabello, lo ayudará a definir su peinado. <br><br>Modo de uso: Aplicar con la yema de los dedos, en pequeñas cantidades, modelando el cabello. Si lo que desea es esculpir el cabello, aplique mayor cantidad de producto.</div>    <div> Presentación: 50grs.</div>
     </div>
   </div>
 </section>
 
 
+</main>
+
 <footer class="footer">
   <div class="footer-nav">
+<a href="https://steffenargentina.com">Tienda online</a>
+<a href="https://steffenprofesional.com">Portal Profesional</a>
     <a href="index.html">INICIO</a>
     <a href="productos.html">PRODUCTOS</a>
     <a href="catalogo.html">CATÁLOGO</a>
@@ -105,6 +109,7 @@ Modo de uso: Aplicar a una distancia de 30cm. del peinado en forma de lluvia.</d
     <img src="img/whatsapp-icon.png" alt="WhatsApp">
   </a>
   
-  <script src="interacciones.js" defer></script>
+  <script src="tiendanube-links.js" defer></script>
+<script src="interacciones.js" defer></script>
 </body>
 </html>

@@ -8,33 +8,29 @@
   <link rel="icon" href="img/logito.png" type="image/x-icon">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="commerce-stage product-family">
 
 
 
 
 
   <!-- Header -->
-  <header class="site-header">
-    <div class="container nav-content">
-     
-        <img src="img/logo.png" alt="Logo" class="logo">
-
-      <nav class="main-nav">
-        <a href="index.html">INICIO</a>
-        <a href="index.html#productos">PRODUCTOS</a>
-        <a href="index.html#quienes">QUIÉNES SOMOS</a>
-        <a href="img/CATALOGO%20STEFFEN%20COSMETICA%20CAPILAR%202025.pdf" target="_blank" rel="noopener">CATÁLOGO</a>
-        <a href="index.html#contacto">CONTACTO</a>
-      </nav>
-     
-      <a href="index.html#contacto-salon" class="btn-salon">Sumar a mi salón</a>
-      
-    </div>
-  </header>
+  <header class="site-header"><div class="container nav-content">
+ <a class="brand-link" href="index.html" aria-label="Steffen, inicio"><img src="img/logo.png" alt="Steffen Cosmética Capilar" class="logo" width="50" height="56"></a>
+ <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-menu">MENÚ</button>
+ <nav class="main-nav" id="main-menu" aria-label="Navegación principal">
+  <a href="index.html">INICIO</a>
+  <a href="index.html#productos" aria-current="page">PRODUCTOS</a>
+  <a href="index.html#quienes">QUIÉNES SOMOS</a>
+  <a class="nav-shop" href="https://steffenargentina.com">TIENDA ONLINE</a>
+  <a href="index.html#contacto">CONTACTO</a>
+ </nav>
+ <a href="https://steffenprofesional.com" class="btn-salon">Portal para profesionales</a>
+</div></header>
 
   
 <!-- Menú de categorías (vertical, a la izquierda) -->
+<aside class="family-tools" aria-label="Catálogo y familias"><a class="catalog-download" href="img/CATALOGO%20STEFFEN%20COSMETICA%20CAPILAR%202025.pdf" download="Catalogo-Steffen-2025.pdf">DESCARGAR CATÁLOGO EN PDF</a>
 <nav class="cat-nav" aria-label="Categorías de productos">
   <a href="reparadores.html">Serums</a>
   <a href="biphases.html">Bi-Phases</a>
@@ -43,14 +39,17 @@
   <a href="cremas.html">Máscaras Capilares</a>
   <a href="finishing.html">Finishing</a>
 </nav>
+</aside>
+<main class="product-details">
 
 
   <!-- Triples -->
-<section class="Triplelino-section">
+<section class="product-detail Triplelino-section">
+  <img class="product-photo" src="img/fichas/triple-lino.webp" alt="" width="640" height="640" loading="lazy">
   <div class="Triplelino-contenido">
-    <div class="texto">
+    <div class="texto" data-product-id="triple-lino">
     <h3>EMULSION CAPILAR</h3>
-    <h1>TRIPLE ACCION</h2>
+    <h1>TRIPLE ACCION</h1>
     <h2>Semi de Lino</h2>
     <h5>NUTRICION, PROTECCION Y BRILLO</h5>
     <div>Tratamiento reparador a base de semillas de Lino que nutre la fibra capilar desde su interior aportando brillo natural, suavidad y docilidad a todo tipo de cabello. Proporciona hidratación intensa y devuelve la elasticidad natural.</div>
@@ -59,11 +58,12 @@
   </div>
 </section>
 
-<section class="TripleK-section">
+<section class="product-detail TripleK-section">
+  <img class="product-photo" src="img/fichas/triple-keratina.webp" alt="" width="640" height="640" loading="lazy">
   <div class="TripleK-contenido">
-    <div class="texto">
+    <div class="texto" data-product-id="triple-keratina">
     <h3>EMULSION CAPILAR</h3>
-    <h1>TRIPLE ACCION</h2>
+    <h1>TRIPLE ACCION</h1>
     <h2>KERATINA</h2>
     <h5>NUTRICION, PROTECCION Y BRILLO</h5>
     <div>Tratamiento reparador a base de Keratina que nutre la fibra capilar desde su interior aportando brillo natural, suavidad y docilidad al cabello. Proporciona hidratación intensa y devuelve la elasticidad natural. Ideal para cabellos dañados.</div>
@@ -73,11 +73,12 @@
 </section>
 
 
-<section class="TripleA-section">
+<section class="product-detail TripleA-section">
+  <img class="product-photo" src="img/destacados/triple-argan.webp" alt="" width="640" height="640" loading="lazy">
   <div class="TripleA-contenido">
-    <div class="texto">
+    <div class="texto" data-product-id="triple-argan">
     <h3>EMULSION CAPILAR</h3>
-    <h1>TRIPLE ACCION</h2>
+    <h1>TRIPLE ACCION</h1>
     <h2>OLIO DE ARGAN</h2>
     <h5>NUTRICION, PROTECCION Y BRILLO</h5>
     <div>Tratamiento reparador a base de olio de Argán que nutre la fibra capilar desde su interior aportando brillo natural, suavidad y docilidad al cabello. Proporciona hidratación intensa y devuelve la elasticidad natural. Ideal para cabellos secos.
@@ -89,12 +90,13 @@
 
 
 
-<section class="TripleC-section">
+<section class="product-detail TripleC-section">
+  <img class="product-photo" src="img/fichas/triple-coco.webp" alt="" width="640" height="640" loading="lazy">
   <div class="TripleC-contenido">
-    <div class="texto">
-    <img src="img/linea-coconut.png" alt="">
+    <div class="texto" data-product-id="triple-coco">
+    <img class="product-desktop-art" src="img/linea-coconut.png" alt="">
     <h3>EMULSION CAPILAR</h3>
-    <h1>TRIPLE ACCION</h2>
+    <h1>TRIPLE ACCION</h1>
     <h2>Aceite de Coco</h2>
     <h5>NUTRICION, PROTECCION Y BRILLO</h5>
     <div>Tratamiento reparador a base de aceite de coco que nutre la fibra capilar desde su interior aportando brillo natural, suavidad y docilidad al cabello. Proporciona hidratación intensa y devuelve la elasticidad natural.
@@ -104,8 +106,12 @@ Ideal para cabellos secos..</div>
   </div>
 </section>
 
+</main>
+
 <footer class="footer">
   <div class="footer-nav">
+<a href="https://steffenargentina.com">Tienda online</a>
+<a href="https://steffenprofesional.com">Portal Profesional</a>
     <a href="index.html">INICIO</a>
     <a href="productos.html">PRODUCTOS</a>
     <a href="catalogo.html">CATÁLOGO</a>
@@ -135,6 +141,7 @@ Ideal para cabellos secos..</div>
     <img src="img/whatsapp-icon.png" alt="WhatsApp">
   </a>
 
-  <script src="interacciones.js" defer></script>
+  <script src="tiendanube-links.js" defer></script>
+<script src="interacciones.js" defer></script>
 </body>
 </html>

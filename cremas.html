@@ -3,38 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Triple Accion</title>
+  <title>Máscaras capilares | Steffen</title>
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="img/logito.png" type="image/x-icon">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="commerce-stage product-family catalog-family">
 
 
 
 
 
   <!-- Header -->
-  <header class="site-header">
-    <div class="container nav-content">
-     
-        <img src="img/logo.png" alt="Logo" class="logo">
-
-      <nav class="main-nav">
-        <a href="index.html">INICIO</a>
-        <a href="index.html#productos">PRODUCTOS</a>
-        <a href="index.html#quienes">QUIÉNES SOMOS</a>
-        <a href="img/CATALOGO%20STEFFEN%20COSMETICA%20CAPILAR%202025.pdf" target="_blank" rel="noopener">CATÁLOGO</a>
-        <a href="index.html#contacto">CONTACTO</a>
-      </nav>
-     
-      <a href="index.html#contacto-salon" class="btn-salon">Sumar a mi salón</a>
-      
-    </div>
-  </header>
+  <header class="site-header"><div class="container nav-content">
+ <a class="brand-link" href="index.html" aria-label="Steffen, inicio"><img src="img/logo.png" alt="Steffen Cosmética Capilar" class="logo" width="50" height="56"></a>
+ <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-menu">MENÚ</button>
+ <nav class="main-nav" id="main-menu" aria-label="Navegación principal">
+  <a href="index.html">INICIO</a>
+  <a href="index.html#productos" aria-current="page">PRODUCTOS</a>
+  <a href="index.html#quienes">QUIÉNES SOMOS</a>
+  <a class="nav-shop" href="https://steffenargentina.com">TIENDA ONLINE</a>
+  <a href="index.html#contacto">CONTACTO</a>
+ </nav>
+ <a href="https://steffenprofesional.com" class="btn-salon">Portal para profesionales</a>
+</div></header>
 
   
-<!-- Menú de categorías (vertical, a la izquierda) -->
+<div class="catalog-layout">
+<aside class="family-tools" aria-label="Catálogo y familias"><a class="catalog-download" href="img/CATALOGO%20STEFFEN%20COSMETICA%20CAPILAR%202025.pdf" download="Catalogo-Steffen-2025.pdf">DESCARGAR CATÁLOGO EN PDF</a>
 <nav class="cat-nav" aria-label="Categorías de productos">
   <a href="reparadores.html">Serums</a>
   <a href="biphases.html">Bi-Phases</a>
@@ -43,20 +38,148 @@
   <a href="cremas.html" class="active" aria-current="page">Máscaras Capilares</a>
   <a href="finishing.html">Finishing</a>
 </nav>
+</aside>
 
 
-  <!-- CONSTRUCCION -->
-<section class="construccion">
-    <div class="texto">
-    <h1>PAGINA NO DISPONIBLE</h2>
-    <h2>Visite nuestro catalogo para ver los productos</h2>
+  <main class="catalog-main" id="contenido">
+  <header class="catalog-heading">
+    <h1>Máscaras capilares</h1>
+    <p>Tratamientos nutritivos de uso profesional del catálogo Steffen.</p>
+    <nav class="catalog-jumps" aria-label="Productos de esta familia">
+      <a href="#coconut">Línea Coconut</a>
+      <a href="#argan">Olio de Argán</a>
+      <a href="#extra-acido">Extra Ácido</a>
+      <a href="#semi-de-lino">Nutrición Semi de Lino</a>
+      <a href="#keratina">Nutrición + Keratina</a>
+      <a href="#bano-de-luz">Baño de Luz</a>
+      <a href="#exhibidor">Exhibidor</a>
+    </nav>
+  </header>
+  <article class="catalog-product" id="coconut" aria-labelledby="coconut-title">
+    <figure>
+      <img src="img/catalogo-familias/mascara-coconut.webp" width="640" height="534" alt="Máscara capilar Línea Coconut Steffen" loading="lazy">
+      <figcaption>Pote de 250 cc.</figcaption>
+    </figure>
+    <div class="catalog-copy">
+      <h2 id="coconut-title">Línea Coconut</h2>
+      <p class="catalog-benefit">Cabellos secos, muy secos y frágiles</p>
+      <p>Tratamiento nutritivo intensivo con aceite de coco que renueva las fibras capilares e hidrata intensamente. Aporta suavidad, soltura y brillo.</p>
+      <div><h3>Modo de uso</h3><p>Lavar bien el cabello y secar con toalla. Aplicar masajeando y estirando de medios a puntas. Dejar actuar de 10 a 20 minutos y enjuagar con abundante agua.</p></div>
+      <div><h3>Presentaciones según el catálogo</h3><p>Caja exhibidora de 36 unidades de 60 cc. Pote de 250 cc. Pote de 1000 cc (contenido neto pendiente de confirmación).</p></div>
+      <div class="catalog-purchases">
+        <h3>Comprar en Tiendanube</h3>
+        <div class="catalog-buy-links" data-product-id="mascara-coconut"></div>
+      </div>
     </div>
-</section>
+  </article>
 
+  <article class="catalog-product" id="argan" aria-labelledby="argan-title">
+    <figure>
+      <img src="img/productos/mascaras.jpg" width="1400" height="1400" alt="Máscara capilar Olio de Argán Steffen" loading="lazy">
+      <figcaption>Pote de 1000 cc.</figcaption>
+    </figure>
+    <div class="catalog-copy">
+      <h2 id="argan-title">Olio de Argán</h2>
+      <p class="catalog-benefit">Cabellos secos</p>
+      <p>Nutre e hidrata el cabello desde la raíz y aporta suavidad, soltura y brillo.</p>
+      <div><h3>Modo de uso</h3><p>Después del lavado, aplicar sobre el cabello húmedo. Dejar actuar de 10 a 20 minutos, masajeando de medios a puntas. Enjuagar con abundante agua.</p></div>
+      <div><h3>Presentaciones según el catálogo</h3><p>Caja exhibidora de 36 unidades de 60 cc. Pote de 250 cc. Pote de 180 cc en estuche. Pote de 1000 cc.</p></div>
+      <div class="catalog-purchases">
+        <h3>Comprar en Tiendanube</h3>
+        <div class="catalog-buy-links" data-product-id="mascara-argan"></div>
+      </div>
+    </div>
+  </article>
 
+  <article class="catalog-product" id="extra-acido" aria-labelledby="extra-acido-title">
+    <figure>
+      <img src="img/catalogo-familias/mascara-extra-acido.webp" width="680" height="708" alt="Máscara capilar Extra Ácido Steffen" loading="lazy">
+      <figcaption>Pote de 250 cc.</figcaption>
+    </figure>
+    <div class="catalog-copy">
+      <h2 id="extra-acido-title">Extra Ácido</h2>
+      <p class="catalog-benefit">Cabellos teñidos, decolorados o alisados</p>
+      <p>Su pH ácido restaura la fibra capilar sometida a tratamientos químicos y prolonga su duración y color. Aporta suavidad y brillo.</p>
+      <div><h3>Modo de uso</h3><p>Después del lavado, aplicar sobre el cabello húmedo. Dejar actuar de 10 a 20 minutos, masajeando de medios a puntas. Enjuagar con abundante agua.</p></div>
+      <div><h3>Presentaciones según el catálogo</h3><p>Caja exhibidora de 36 unidades de 60 cc. Pote de 250 cc. Pote de 180 cc en estuche. Pote de 1000 cc.</p></div>
+      <div class="catalog-purchases">
+        <h3>Comprar en Tiendanube</h3>
+        <div class="catalog-buy-links" data-product-id="mascara-extra-acido"></div>
+      </div>
+    </div>
+  </article>
+
+  <article class="catalog-product" id="semi-de-lino" aria-labelledby="semi-de-lino-title">
+    <figure>
+      <img src="img/catalogo-familias/mascara-semi-de-lino.webp" width="682" height="712" alt="Máscara capilar Nutrición Semi de Lino Steffen" loading="lazy">
+      <figcaption>Pote de 250 cc.</figcaption>
+    </figure>
+    <div class="catalog-copy">
+      <h2 id="semi-de-lino-title">Nutrición Semi de Lino</h2>
+      <p class="catalog-benefit">Cabellos dañados</p>
+      <p>Tratamiento nutritivo que repara y fortalece la fibra capilar dañada. Aporta brillo, suavidad y soltura.</p>
+      <div><h3>Modo de uso</h3><p>Después del lavado, aplicar sobre el cabello húmedo. Dejar actuar de 10 a 20 minutos, masajeando de medios a puntas. Enjuagar con abundante agua.</p></div>
+      <div><h3>Presentaciones según el catálogo</h3><p>Caja exhibidora de 36 unidades de 60 cc. Pote de 250 cc. Pote de 180 cc en estuche. Pote de 1000 cc.</p></div>
+      <div class="catalog-purchases">
+        <h3>Comprar en Tiendanube</h3>
+        <div class="catalog-buy-links" data-product-id="mascara-semi-de-lino"></div>
+      </div>
+    </div>
+  </article>
+
+  <article class="catalog-product" id="keratina" aria-labelledby="keratina-title">
+    <figure>
+      <img src="img/catalogo-familias/mascara-keratina.webp" width="1526" height="1067" alt="Máscara capilar Nutrición + Keratina Steffen" loading="lazy">
+      <figcaption>Potes de 250 y 1000 cc.</figcaption>
+    </figure>
+    <div class="catalog-copy">
+      <h2 id="keratina-title">Nutrición + Keratina</h2>
+      <p class="catalog-benefit">Cabellos dañados</p>
+      <p>Tratamiento nutritivo que repara y fortalece la fibra capilar dañada. Aporta brillo, suavidad y soltura.</p>
+      <div><h3>Modo de uso</h3><p>Después del lavado, aplicar sobre el cabello húmedo. Dejar actuar de 10 a 20 minutos, masajeando de medios a puntas. Enjuagar con abundante agua.</p></div>
+      <div><h3>Presentaciones según el catálogo</h3><p>Caja exhibidora de 36 unidades de 60 cc. Pote de 250 cc. Pote de 1000 cc.</p></div>
+      <div class="catalog-purchases">
+        <h3>Comprar en Tiendanube</h3>
+        <div class="catalog-buy-links" data-product-id="mascara-keratina"></div>
+      </div>
+    </div>
+  </article>
+
+  <article class="catalog-product" id="bano-de-luz" aria-labelledby="bano-de-luz-title">
+    <figure>
+      <img src="img/catalogo-familias/mascara-bano-de-luz.webp" width="676" height="705" alt="Máscara capilar Baño de Luz Steffen" loading="lazy">
+      <figcaption>Pote de 250 cc.</figcaption>
+    </figure>
+    <div class="catalog-copy">
+      <h2 id="bano-de-luz-title">Baño de Luz</h2>
+      <p class="catalog-benefit">Todo tipo de cabello</p>
+      <p>Tratamiento nutritivo que aporta brillo, suavidad y soltura.</p>
+      <div><h3>Modo de uso</h3><p>Después del lavado, aplicar sobre el cabello húmedo. Dejar actuar de 10 a 20 minutos, masajeando de medios a puntas. Enjuagar con abundante agua.</p></div>
+      <div><h3>Presentaciones según el catálogo</h3><p>Caja exhibidora de 36 unidades de 60 cc. Pote de 250 cc. Pote de 180 cc en estuche. Pote de 1000 cc (contenido neto pendiente de confirmación).</p></div>
+      <div class="catalog-purchases">
+        <h3>Comprar en Tiendanube</h3>
+        <div class="catalog-buy-links" data-product-id="mascara-bano-de-luz"></div>
+      </div>
+    </div>
+  </article>
+
+  <article class="catalog-product" id="exhibidor" aria-labelledby="exhibidor-title">
+    <figure>
+      <img src="img/catalogo-familias/mascaras-exhibidor.webp" width="767" height="883" alt="Exhibidor Steffen de máscaras capilares Steffen" loading="lazy">
+      <figcaption>Caja exhibidora del catálogo Steffen 2025.</figcaption>
+    </figure>
+    <div class="catalog-copy">
+      <h2 id="exhibidor-title">Caja exhibidora de máscaras</h2>
+      <p>Presentación de 36 unidades de 60 cc. El catálogo incluye Nutrición Semi de Lino, Nutrición + Keratina, Extra Ácido, Olio de Argán, Baño de Luz y Línea Coconut.</p>
+    </div>
+  </article>
+</main>
+</div>
 
 <footer class="footer">
   <div class="footer-nav">
+<a href="https://steffenargentina.com">Tienda online</a>
+<a href="https://steffenprofesional.com">Portal Profesional</a>
     <a href="index.html">INICIO</a>
     <a href="productos.html">PRODUCTOS</a>
     <a href="catalogo.html">CATÁLOGO</a>
@@ -86,6 +209,7 @@
     <img src="img/whatsapp-icon.png" alt="WhatsApp">
   </a>
 
+  <script src="tiendanube-links.js" defer></script>
   <script src="interacciones.js" defer></script>
 </body>
 </html>

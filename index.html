@@ -8,26 +8,21 @@
   <link rel="icon" href="img/logito.png" type="image/x-icon">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,700;0,800;1,300;1,400&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="commerce-stage">
 
   <!-- Header -->
-  <header class="site-header">
-    <div class="container nav-content">
-     
-        <img src="img/logo.png" alt="Logo" class="logo">
-
-      <nav class="main-nav">
-        <a href="index.html">INICIO</a>
-        <a href="index.html#productos">PRODUCTOS</a>
-        <a href="index.html#quienes">QUIÉNES SOMOS</a>
-        <a href="img/CATALOGO%20STEFFEN%20COSMETICA%20CAPILAR%202025.pdf" target="_blank" rel="noopener">CATÁLOGO</a>
-        <a href="index.html#contacto">CONTACTO</a>
-      </nav>
-     
-      <a href="index.html#contacto-salon" class="btn-salon">Sumar a mi salón</a>
-      
-    </div>
-  </header>
+  <header class="site-header"><div class="container nav-content">
+ <a class="brand-link" href="index.html" aria-label="Steffen, inicio"><img src="img/logo.png" alt="Steffen Cosmética Capilar" class="logo" width="50" height="56"></a>
+ <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-menu">MENÚ</button>
+ <nav class="main-nav" id="main-menu" aria-label="Navegación principal">
+  <a href="index.html" aria-current="page">INICIO</a>
+  <a href="index.html#productos">PRODUCTOS</a>
+  <a href="index.html#quienes">QUIÉNES SOMOS</a>
+  <a class="nav-shop" href="https://steffenargentina.com">TIENDA ONLINE</a>
+  <a href="index.html#contacto">CONTACTO</a>
+ </nav>
+ <a href="https://steffenprofesional.com" class="btn-salon">Portal para profesionales</a>
+</div></header>
 
 
 
@@ -144,6 +139,21 @@
       </a>
     </div>
   </section>
+
+<section class="featured-products" aria-labelledby="featured-title"><h2 id="featured-title">Productos destacados</h2><div class="featured-grid">
+<article class="featured-card" data-featured-product="triple-argan" data-presentation="180 cc"><img src="img/destacados/triple-argan.webp" alt="Emulsión Argan Triple Accion 180 cc" loading="lazy" width="640" height="640"><h3>Emulsión Argan Triple Accion 180 cc</h3><div class="featured-commerce"></div></article>
+<article class="featured-card" data-featured-product="brillo-lino" data-presentation="125 cc"><img src="img/destacados/brillo-lino.webp" alt="Brillo Semi de Lino 125cc" loading="lazy" width="640" height="640"><h3>Brillo Semi de Lino 125cc</h3><div class="featured-commerce"></div></article>
+<article class="featured-card" data-featured-product="biphase-keratina" data-presentation="200 ml"><img src="img/destacados/biphase-keratina.webp" alt="Bi- phase Keratina 200 ml" loading="lazy" width="640" height="640"><h3>Bi- phase Keratina 200 ml</h3><div class="featured-commerce"></div></article>
+<article class="featured-card" data-featured-product="serum-lino" data-presentation="75 cc"><img src="img/destacados/serum-lino.webp" alt="Reparador de puntas Cristal Semi de Lino 75cc" loading="lazy" width="640" height="640"><h3>Reparador de puntas Cristal Semi de Lino 75cc</h3><div class="featured-commerce"></div></article></div><p class="featured-note">Precios en pesos argentinos. Consultá las condiciones vigentes en la tienda online.</p></section>
+
+<section class="routine-section" aria-labelledby="routine-title">
+ <div class="routine-heading"><p class="routine-kicker">Cuidado profesional</p><h2 id="routine-title">ENCONTRÁ TU RUTINA IDEAL</h2><p>Cada cabello necesita un cuidado diferente. Descubrí qué rutina Steffen se adapta mejor a vos.</p></div>
+ <div class="routine-grid"><article class="routine-card"><img src="img/rutinas/rutina-0.webp" alt="Rutina Cabellos deshidratados - NUTRICION EXTREMA" loading="lazy" width="480" height="480"><div class="routine-copy"><p class="routine-need">Cabellos deshidratados</p><h3>Nutrición extrema</h3><p>Shampoo, acondicionador y máscara Semi de Lino, Bi-Phase Semi de Lino y reparador Cristal 30 cc.</p><a href="https://steffenargentina.com/productos/rutina-cabellos-deshidratados-nutricion/">Conocer rutina<span class="sr-only">: Nutrición extrema</span> <span aria-hidden="true">↗</span></a></div></article>
+<article class="routine-card"><img src="img/rutinas/rutina-1.webp" alt="Rutina Cabellos teñidos/alisados" loading="lazy" width="480" height="480"><div class="routine-copy"><p class="routine-need">Cabellos teñidos o alisados</p><h3>Prolonga el color</h3><p>Shampoo, acondicionador y máscara Extra Ácido, emulsión Triple Acción Keratina y Bio-Esfera Keratina.</p><a href="https://steffenargentina.com/productos/rutina-cabellos-tenidos-alisados/">Conocer rutina<span class="sr-only">: Prolonga el color</span> <span aria-hidden="true">↗</span></a></div></article>
+<article class="routine-card"><img src="img/rutinas/rutina-2.webp" alt="Rutina Cabellos secos - BRILLO Y SUAVIDAD" loading="lazy" width="480" height="480"><div class="routine-copy"><p class="routine-need">Cabellos secos</p><h3>Brillo y suavidad</h3><p>Shampoo, acondicionador y máscara Olio de Argán, emulsión Triple Acción Argán y reparador Cristal 30 cc.</p><a href="https://steffenargentina.com/productos/rutina-cabellos-secos-brillo-y-suavidad/">Conocer rutina<span class="sr-only">: Brillo y suavidad</span> <span aria-hidden="true">↗</span></a></div></article>
+<article class="routine-card"><img src="img/rutinas/rutina-3.webp" alt="Rutina Cabellos secos - HIDRATACION INTENSIVA" loading="lazy" width="480" height="480"><div class="routine-copy"><p class="routine-need">Cabellos secos</p><h3>Hidratación intensiva</h3><p>Shampoo, acondicionador y máscara Coconut, Bi-Phase Coconut, emulsión Triple Acción Coconut y sérum Coconut.</p><a href="https://steffenargentina.com/productos/rutina-cabellos-secos-hidratacion-intensiva/">Conocer rutina<span class="sr-only">: Hidratación intensiva</span> <span aria-hidden="true">↗</span></a></div></article>
+<article class="routine-card"><img src="img/rutinas/rutina-4.webp" alt="Rutina Cabellos dañados - REPARACION TOTAL" loading="lazy" width="480" height="480"><div class="routine-copy"><p class="routine-need">Cabellos dañados</p><h3>Reparación total</h3><p>Shampoo, acondicionador y máscara Keratina, Bi-Phase Keratina y reparador Cristal 30 cc.</p><a href="https://steffenargentina.com/productos/rutina-cabellos-danados-reparacion/">Conocer rutina<span class="sr-only">: Reparación total</span> <span aria-hidden="true">↗</span></a></div></article></div>
+</section>
 
   <!-- Quiénes somos -->
   <section class="quienes" id="quienes">
@@ -353,6 +363,8 @@
 
 <footer class="footer">
   <div class="footer-nav">
+<a href="https://steffenargentina.com">Tienda online</a>
+<a href="https://steffenprofesional.com">Portal Profesional</a>
     <a href="index.html">INICIO</a>
     <a href="productos.html">PRODUCTOS</a>
     <a href="catalogo.html">CATÁLOGO</a>
@@ -377,6 +389,7 @@
   </div>
 </footer>
 
-  <script src="interacciones.js" defer></script>
+  <script src="tiendanube-links.js" defer></script>
+<script src="interacciones.js" defer></script>
 </body>
 </html>

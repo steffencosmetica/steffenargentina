@@ -3,38 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Triple Accion</title>
+  <title>Shampoos y acondicionadores | Steffen</title>
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="img/logito.png" type="image/x-icon">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="commerce-stage product-family catalog-family">
 
 
 
 
 
   <!-- Header -->
-  <header class="site-header">
-    <div class="container nav-content">
-     
-        <img src="img/logo.png" alt="Logo" class="logo">
-
-      <nav class="main-nav">
-        <a href="index.html">INICIO</a>
-        <a href="index.html#productos">PRODUCTOS</a>
-        <a href="index.html#quienes">QUIÉNES SOMOS</a>
-        <a href="img/CATALOGO%20STEFFEN%20COSMETICA%20CAPILAR%202025.pdf" target="_blank" rel="noopener">CATÁLOGO</a>
-        <a href="index.html#contacto">CONTACTO</a>
-      </nav>
-     
-      <a href="index.html#contacto-salon" class="btn-salon">Sumar a mi salón</a>
-      
-    </div>
-  </header>
+  <header class="site-header"><div class="container nav-content">
+ <a class="brand-link" href="index.html" aria-label="Steffen, inicio"><img src="img/logo.png" alt="Steffen Cosmética Capilar" class="logo" width="50" height="56"></a>
+ <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-menu">MENÚ</button>
+ <nav class="main-nav" id="main-menu" aria-label="Navegación principal">
+  <a href="index.html">INICIO</a>
+  <a href="index.html#productos" aria-current="page">PRODUCTOS</a>
+  <a href="index.html#quienes">QUIÉNES SOMOS</a>
+  <a class="nav-shop" href="https://steffenargentina.com">TIENDA ONLINE</a>
+  <a href="index.html#contacto">CONTACTO</a>
+ </nav>
+ <a href="https://steffenprofesional.com" class="btn-salon">Portal para profesionales</a>
+</div></header>
 
   
-<!-- Menú de categorías (vertical, a la izquierda) -->
+<div class="catalog-layout">
+<aside class="family-tools" aria-label="Catálogo y familias"><a class="catalog-download" href="img/CATALOGO%20STEFFEN%20COSMETICA%20CAPILAR%202025.pdf" download="Catalogo-Steffen-2025.pdf">DESCARGAR CATÁLOGO EN PDF</a>
 <nav class="cat-nav" aria-label="Categorías de productos">
   <a href="reparadores.html">Serums</a>
   <a href="biphases.html">Bi-Phases</a>
@@ -43,20 +38,156 @@
   <a href="cremas.html">Máscaras Capilares</a>
   <a href="finishing.html">Finishing</a>
 </nav>
+</aside>
 
 
-  <!-- CONSTRUCCION -->
-<section class="construccion">
-    <div class="texto">
-    <h1>PAGINA NO DISPONIBLE</h2>
-    <h2>Visite nuestro catalogo para ver los productos</h2>
+  <main class="catalog-main" id="contenido">
+  <header class="catalog-heading">
+    <h1>Shampoos y acondicionadores</h1>
+    <p>Líneas de uso profesional del catálogo Steffen.</p>
+    <nav class="catalog-jumps" aria-label="Productos de esta familia">
+      <a href="#keratina">Keratina</a>
+      <a href="#semi-de-lino">Semi de Lino</a>
+      <a href="#extra-acido">Extra Ácido</a>
+      <a href="#argan">Argán</a>
+      <a href="#neutro">Neutro</a>
+      <a href="#coconut">Línea Coconut</a>
+    </nav>
+  </header>
+  <article class="catalog-product" id="keratina" aria-labelledby="keratina-title">
+    <figure>
+      <img src="img/catalogo-familias/lavado-keratina.webp" width="1347" height="1191" alt="Keratina Steffen" loading="lazy">
+      <figcaption>Envases de la línea Keratina de 350, 1000 y 5000 ml.</figcaption>
+    </figure>
+    <div class="catalog-copy">
+      <h2 id="keratina-title">Keratina</h2>
+      <p>Cabellos dañados</p>
+      <p class="catalog-benefit">Tratamiento reestructurante</p>
+      <p>Su fórmula con keratina limpia, revitaliza y fortalece las fibras capilares dañadas. Otorga suavidad y brillo.</p>
+      <div><h3>Presentaciones según el catálogo</h3><p>Botellas de 350 ml y 1000 ml. Bidón de 5000 ml.</p></div>
+      <div class="catalog-purchases">
+        <h3>Shampoo Keratina</h3>
+        <div class="catalog-buy-links" data-product-id="shampoo-keratina"></div>
+      </div>
+      <div class="catalog-purchases">
+        <h3>Acondicionador Keratina</h3>
+        <div class="catalog-buy-links" data-product-id="acondicionador-keratina"></div>
+      </div>
     </div>
-</section>
+  </article>
 
+  <article class="catalog-product" id="semi-de-lino" aria-labelledby="semi-de-lino-title">
+    <figure>
+      <img src="img/catalogo-familias/lavado-semi-de-lino.webp" width="1350" height="1197" alt="Semi de Lino Steffen" loading="lazy">
+      <figcaption>Shampoo de 1000 y 5000 ml, y acondicionador de 350 ml.</figcaption>
+    </figure>
+    <div class="catalog-copy">
+      <h2 id="semi-de-lino-title">Semi de Lino</h2>
+      <p>Cabellos deshidratados y dañados</p>
+      <p class="catalog-benefit">Tratamiento reestructurante</p>
+      <p>Su fórmula hidrata intensivamente las fibras capilares y devuelve elasticidad al cabello. Otorga suavidad y brillo.</p>
+      <div><h3>Presentaciones según el catálogo</h3><p>Botellas de 350 ml y 1000 ml. Bidón de 5000 ml.</p></div>
+      <div class="catalog-purchases">
+        <h3>Shampoo Semi de Lino</h3>
+        <div class="catalog-buy-links" data-product-id="shampoo-semi-de-lino"></div>
+      </div>
+      <div class="catalog-purchases">
+        <h3>Acondicionador Semi de Lino</h3>
+        <div class="catalog-buy-links" data-product-id="acondicionador-semi-de-lino"></div>
+      </div>
+    </div>
+  </article>
 
+  <article class="catalog-product" id="extra-acido" aria-labelledby="extra-acido-title">
+    <figure>
+      <img src="img/productos/shampoos.jpg" width="1500" height="1070" alt="Extra Ácido Steffen" loading="lazy">
+      <figcaption>Acondicionador y shampoo Extra Ácido de 1000 ml.</figcaption>
+    </figure>
+    <div class="catalog-copy">
+      <h2 id="extra-acido-title">Extra Ácido</h2>
+      <p>Cabellos tratados químicamente, teñidos, decolorados o alisados · pH 3,5</p>
+      <p class="catalog-benefit">Prolonga la duración del color</p>
+      <p>Su fórmula ayuda a contrarrestar los efectos negativos en cabellos teñidos o alisados.</p>
+      <div><h3>Presentaciones según el catálogo</h3><p>Botellas de 350 ml y 1000 ml. Bidón de 5000 ml.</p></div>
+      <div class="catalog-purchases">
+        <h3>Shampoo Extra Ácido</h3>
+        <div class="catalog-buy-links" data-product-id="shampoo-extra-acido"></div>
+      </div>
+      <div class="catalog-purchases">
+        <h3>Acondicionador Extra Ácido</h3>
+        <div class="catalog-buy-links" data-product-id="acondicionador-extra-acido"></div>
+      </div>
+    </div>
+  </article>
+
+  <article class="catalog-product" id="argan" aria-labelledby="argan-title">
+    <figure>
+      <img src="img/catalogo-familias/lavado-argan.webp" width="1373" height="1217" alt="Argán Steffen" loading="lazy">
+      <figcaption>Envases de shampoo Argán de 350, 1000 y 5000 ml.</figcaption>
+    </figure>
+    <div class="catalog-copy">
+      <h2 id="argan-title">Argán</h2>
+      <p>Cabellos secos</p>
+      <p class="catalog-benefit">Hidratación intensiva</p>
+      <p>Su fórmula con aceite de argán humecta las fibras capilares y devuelve soltura y textura al cabello.</p>
+      <div><h3>Presentaciones según el catálogo</h3><p>Botellas de 350 ml y 1000 ml. Bidón de 5000 ml.</p></div>
+      <div class="catalog-purchases">
+        <h3>Shampoo Argán</h3>
+        <div class="catalog-buy-links" data-product-id="shampoo-argan"></div>
+      </div>
+      <div class="catalog-purchases">
+        <h3>Acondicionador Argán</h3>
+        <div class="catalog-buy-links" data-product-id="acondicionador-argan"></div>
+      </div>
+    </div>
+  </article>
+
+  <article class="catalog-product" id="neutro" aria-labelledby="neutro-title">
+    <figure>
+      <img src="img/catalogo-familias/lavado-neutro.webp" width="1362" height="1224" alt="Shampoo Neutro Steffen" loading="lazy">
+      <figcaption>Envases de shampoo Neutro de 350, 1000 y 5000 ml.</figcaption>
+    </figure>
+    <div class="catalog-copy">
+      <h2 id="neutro-title">Shampoo Neutro</h2>
+      <p>Todo tipo de cabello · pH 7</p>
+      <p class="catalog-benefit">Limpieza profunda</p>
+      <p>Su pH neutro ayuda a mantener la naturalidad del cabello. Otorga suavidad y brillo.</p>
+      <div><h3>Presentaciones según el catálogo</h3><p>Botellas de 350 ml y 1000 ml. Bidón de 5000 ml.</p></div>
+      <div class="catalog-purchases">
+        <h3>Shampoo Neutro</h3>
+        <div class="catalog-buy-links" data-product-id="shampoo-neutro"></div>
+      </div>
+    </div>
+  </article>
+
+  <article class="catalog-product" id="coconut" aria-labelledby="coconut-title">
+    <figure>
+      <img src="img/catalogo-familias/lavado-coconut.webp" width="1382" height="1220" alt="Línea Coconut Steffen" loading="lazy">
+      <figcaption>Shampoo de 350 y 5000 ml, y acondicionador de 1000 ml.</figcaption>
+    </figure>
+    <div class="catalog-copy">
+      <h2 id="coconut-title">Línea Coconut</h2>
+      <p>Cabellos secos y muy secos</p>
+      <p class="catalog-benefit">Hidratación extrema</p>
+      <p>Formulados con aceite de coco. Limpian y revitalizan las fibras capilares y aportan suavidad, soltura, elasticidad y brillo.</p>
+      <div><h3>Presentaciones según el catálogo</h3><p>Botellas de 350 ml y 1000 ml. Bidón de 5000 ml.</p></div>
+      <div class="catalog-purchases">
+        <h3>Shampoo Línea Coconut</h3>
+        <div class="catalog-buy-links" data-product-id="shampoo-coconut"></div>
+      </div>
+      <div class="catalog-purchases">
+        <h3>Acondicionador Línea Coconut</h3>
+        <div class="catalog-buy-links" data-product-id="acondicionador-coconut"></div>
+      </div>
+    </div>
+  </article>
+</main>
+</div>
 
 <footer class="footer">
   <div class="footer-nav">
+<a href="https://steffenargentina.com">Tienda online</a>
+<a href="https://steffenprofesional.com">Portal Profesional</a>
     <a href="index.html">INICIO</a>
     <a href="productos.html">PRODUCTOS</a>
     <a href="catalogo.html">CATÁLOGO</a>
@@ -86,6 +217,7 @@
     <img src="img/whatsapp-icon.png" alt="WhatsApp">
   </a>
 
+  <script src="tiendanube-links.js" defer></script>
   <script src="interacciones.js" defer></script>
 </body>
 </html>

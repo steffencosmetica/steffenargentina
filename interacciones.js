@@ -1,6 +1,60 @@
 // Interacciones del sitio Steffen
 (function () {
   document.documentElement.classList.add('js');
+  var menuButton = document.querySelector('.menu-toggle');
+  var mainMenu = document.querySelector('.main-nav');
+  if (menuButton && mainMenu) {
+    var closeMenu = function () { menuButton.setAttribute('aria-expanded', 'false'); };
+    menuButton.addEventListener('click', function () {
+      menuButton.setAttribute('aria-expanded', String(menuButton.getAttribute('aria-expanded') !== 'true'));
+    });
+    mainMenu.addEventListener('click', function (event) { if (event.target.closest('a')) closeMenu(); });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && menuButton.getAttribute('aria-expanded') === 'true') { closeMenu(); menuButton.focus(); }
+    });
+  }
+  var productFamily = document.body.classList.contains('product-family');
+  var animatedProductLayout = productFamily
+    ? window.matchMedia('(width > 1024px) and (prefers-reduced-motion: no-preference)')
+    : null;
+  var bindScrollEffect = function (update, reset, trackResize) {
+    var sync = function () {
+      if (!animatedProductLayout || animatedProductLayout.matches) {
+        window.addEventListener('scroll', update, { passive: true });
+        if (trackResize) window.addEventListener('resize', update);
+        update();
+      } else {
+        window.removeEventListener('scroll', update);
+        if (trackResize) window.removeEventListener('resize', update);
+        reset();
+      }
+    };
+    sync();
+    if (animatedProductLayout) animatedProductLayout.addEventListener('change', sync);
+  };
+  var siteHeader = document.querySelector('.site-header');
+  if (siteHeader) {
+    var updateHeaderHeight = function () { document.documentElement.style.setProperty('--site-header-height', siteHeader.offsetHeight + 'px'); };
+    var measureHeader = function () {
+      updateHeaderHeight();
+      if ('ResizeObserver' in window) new ResizeObserver(updateHeaderHeight).observe(siteHeader);
+      else window.addEventListener('resize', updateHeaderHeight);
+    };
+    if (productFamily) {
+      var stickyFamilyTools = window.matchMedia('(1024px < width <= 1200px)');
+      var headerObserver = 'ResizeObserver' in window ? new ResizeObserver(updateHeaderHeight) : null;
+      var syncHeaderMeasurement = function () {
+        if (stickyFamilyTools.matches) {
+          updateHeaderHeight();
+          if (headerObserver) headerObserver.observe(siteHeader);
+          else window.addEventListener('resize', updateHeaderHeight);
+        } else if (headerObserver) headerObserver.disconnect();
+        else window.removeEventListener('resize', updateHeaderHeight);
+      };
+      syncHeaderMeasurement();
+      stickyFamilyTools.addEventListener('change', syncHeaderMeasurement);
+    } else measureHeader();
+  }
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* Aparición de elementos al hacer scroll */
@@ -41,12 +95,11 @@
     var onScroll = function () {
       header.classList.toggle('scrolled', window.scrollY > 40);
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
+    bindScrollEffect(onScroll, function () { header.classList.remove('scrolled'); });
   }
 
   /* Menú lateral de categorías y menú de arriba: cada botón pasa a texto claro cuando está sobre una sección oscura */
-  var catLinks = document.querySelectorAll('.cat-nav a, .main-nav a');
+  var catLinks = document.querySelectorAll('.cat-nav a');
   var darkSections = document.querySelectorAll('.seccion-oscura');
   if (catLinks.length && darkSections.length) {
     var updateCatNav = function () {
@@ -58,9 +111,9 @@
         a.classList.toggle('sobre-oscuro', dark);
       });
     };
-    window.addEventListener('scroll', updateCatNav, { passive: true });
-    window.addEventListener('resize', updateCatNav);
-    updateCatNav();
+    bindScrollEffect(updateCatNav, function () {
+      catLinks.forEach(function (a) { a.classList.remove('sobre-oscuro'); });
+    }, true);
   }
 
   /* Contacto: pestañas distribuidora / salón */
@@ -145,13 +198,7 @@
     items.forEach(function (item) {
       item.addEventListener('mouseenter', function () { activate(item); });
       item.addEventListener('focus', function () { activate(item); });
-      // en pantallas táctiles el primer toque abre la columna y el segundo entra a la página
-      item.addEventListener('click', function (e) {
-        if (!item.classList.contains('active')) {
-          e.preventDefault();
-          activate(item);
-        }
-      });
+
     });
   });
 

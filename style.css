@@ -1811,6 +1811,56 @@ form button:hover {
 
 
 /* HERO + BENEFICIOS: fondo blanco tipo bandera flameando */
+.shop-carousel {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1672 / 941;
+  background: #111;
+}
+
+.shop-carousel-slide {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.shop-carousel-slide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.shop-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  cursor: pointer;
+}
+
+.shop-carousel-arrow::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border: solid currentColor;
+  border-width: 2px 2px 0 0;
+}
+
+.shop-carousel-prev { left: 8px; }
+.shop-carousel-next { right: 8px; }
+.shop-carousel-prev::before { transform: translateX(2px) rotate(-135deg); }
+.shop-carousel-next::before { transform: translateX(-2px) rotate(45deg); }
+.shop-carousel [hidden] { display: none; }
+.shop-carousel :focus-visible { outline: 3px solid #e4bf71; outline-offset: -4px; }
+
 .hero-flag {
   position: relative;
   overflow: hidden;

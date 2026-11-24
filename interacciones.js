@@ -57,6 +57,44 @@
   }
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  var shopCarousel = document.querySelector('.shop-carousel');
+  if (shopCarousel) {
+    var slides = shopCarousel.querySelectorAll('.shop-carousel-slide');
+    var previousSlide = shopCarousel.querySelector('.shop-carousel-prev');
+    var nextSlide = shopCarousel.querySelector('.shop-carousel-next');
+    var activeSlide = 0;
+    var carouselTimer;
+
+    var moveCarousel = function (step) {
+      slides[activeSlide].hidden = true;
+      activeSlide = (activeSlide + step + slides.length) % slides.length;
+      slides[activeSlide].hidden = false;
+    };
+
+    var updateCarouselTimer = function () {
+      window.clearInterval(carouselTimer);
+      if (reduceMotion || document.hidden) return;
+
+      carouselTimer = window.setInterval(function () {
+        if (slides[activeSlide].contains(document.activeElement)) return;
+        moveCarousel(1);
+      }, 6000);
+    };
+
+    previousSlide.addEventListener('click', function () {
+      moveCarousel(-1);
+      updateCarouselTimer();
+    });
+    nextSlide.addEventListener('click', function () {
+      moveCarousel(1);
+      updateCarouselTimer();
+    });
+    document.addEventListener('visibilitychange', updateCarouselTimer);
+    previousSlide.hidden = false;
+    nextSlide.hidden = false;
+    updateCarouselTimer();
+  }
+
   /* Aparición de elementos al hacer scroll */
   var reveals = document.querySelectorAll('.reveal');
   if (reveals.length && 'IntersectionObserver' in window && !reduceMotion) {

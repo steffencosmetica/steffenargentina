@@ -1,0 +1,156 @@
+[
+  {
+    "n": "index",
+    "width": 1440,
+    "css": "http://127.0.0.1:64623/style.css?v=20261118-1",
+    "header": [
+      "rgb(17, 17, 17)",
+      "sticky"
+    ],
+    "rules": 564,
+    "buys": 4
+  },
+  {
+    "n": "reparadores",
+    "width": 1440,
+    "css": "http://127.0.0.1:64623/style.css?v=20261118-1",
+    "header": [
+      "rgb(17, 17, 17)",
+      "sticky"
+    ],
+    "rules": 564,
+    "buys": 4
+  },
+  {
+    "n": "biphases",
+    "width": 1440,
+    "css": "http://127.0.0.1:64623/style.css?v=20261118-1",
+    "header": [
+      "rgb(17, 17, 17)",
+      "sticky"
+    ],
+    "rules": 564,
+    "buys": 3
+  },
+  {
+    "n": "triples",
+    "width": 1440,
+    "css": "http://127.0.0.1:64623/style.css?v=20261118-1",
+    "header": [
+      "rgb(17, 17, 17)",
+      "sticky"
+    ],
+    "rules": 564,
+    "buys": 4
+  },
+  {
+    "n": "finishing",
+    "width": 1440,
+    "css": "http://127.0.0.1:64623/style.css?v=20261118-1",
+    "header": [
+      "rgb(17, 17, 17)",
+      "sticky"
+    ],
+    "rules": 564,
+    "buys": 2
+  },
+  {
+    "n": "shampoos",
+    "width": 1440,
+    "css": "http://127.0.0.1:64623/style.css?v=20261118-1",
+    "header": [
+      "rgb(17, 17, 17)",
+      "sticky"
+    ],
+    "rules": 564,
+    "buys": 22
+  },
+  {
+    "n": "cremas",
+    "width": 1440,
+    "css": "http://127.0.0.1:64623/style.css?v=20261118-1",
+    "header": [
+      "rgb(17, 17, 17)",
+      "sticky"
+    ],
+    "rules": 564,
+    "buys": 10
+  },
+  {
+    "n": "index",
+    "width": 390,
+    "css": "http://127.0.0.1:64623/style.css?v=20261118-1",
+    "header": [
+      "rgb(17, 17, 17)",
+      "sticky"
+    ],
+    "rules": 564,
+    "buys": 4
+  },
+  {
+    "n": "reparadores",
+    "width": 390,
+    "css": "http://127.0.0.1:64623/style.css?v=20261118-1",
+    "header": [
+      "rgb(17, 17, 17)",
+      "relative"
+    ],
+    "rules": 564,
+    "buys": 4
+  },
+  {
+    "n": "biphases",
+    "width": 390,
+    "css": "http://127.0.0.1:64623/style.css?v=20261118-1",
+    "header": [
+      "rgb(17, 17, 17)",
+      "relative"
+    ],
+    "rules": 564,
+    "buys": 3
+  },
+  {
+    "n": "triples",
+    "width": 390,
+    "css": "http://127.0.0.1:64623/style.css?v=20261118-1",
+    "header": [
+      "rgb(17, 17, 17)",
+      "relative"
+    ],
+    "rules": 564,
+    "buys": 4
+  },
+  {
+    "n": "finishing",
+    "width": 390,
+    "css": "http://127.0.0.1:64623/style.css?v=20261118-1",
+    "header": [
+      "rgb(17, 17, 17)",
+      "relative"
+    ],
+    "rules": 564,
+    "buys": 2
+  },
+  {
+    "n": "shampoos",
+    "width": 390,
+    "css": "http://127.0.0.1:64623/style.css?v=20261118-1",
+    "header": [
+      "rgb(17, 17, 17)",
+      "relative"
+    ],
+    "rules": 564,
+    "buys": 22
+  },
+  {
+    "n": "cremas",
+    "width": 390,
+    "css": "http://127.0.0.1:64623/style.css?v=20261118-1",
+    "header": [
+      "rgb(17, 17, 17)",
+      "relative"
+    ],
+    "rules": 564,
+    "buys": 10
+  }
+]
